@@ -2,50 +2,21 @@ import { describe, expect, it } from 'vitest';
 
 import { Character } from '../src/characters';
 import { Combat } from '../src/combat';
+import { buildCharacterProfile, loadGameContent } from '../src/data';
 import { Game } from '../src/game';
-import type { CharacterProfile } from '../src/types';
 
-const heroProfile: CharacterProfile = {
-  name: '沈孤舟',
-  maxHealth: 72,
-  maxQi: 28,
-  attributes: {
-    strength: 10,
-    agility: 8,
-    constitution: 9,
-    insight: 7,
-  },
-  martialArts: [
-    {
-      name: '破影拳',
-      type: 'waigong',
-      power: 14,
-      qiCost: 4,
-      accuracy: 0.9,
-    },
-  ],
-};
+const content = loadGameContent();
+const heroProfile = buildCharacterProfile(content, content.config.heroId);
+const banditProfile = buildCharacterProfile(content, content.config.rivalId);
 
-const banditProfile: CharacterProfile = {
-  name: '黑风盗',
-  maxHealth: 48,
-  maxQi: 12,
-  attributes: {
-    strength: 7,
-    agility: 5,
-    constitution: 6,
-    insight: 4,
-  },
-  martialArts: [
-    {
-      name: '乱石刀',
-      type: 'waigong',
-      power: 9,
-      qiCost: 3,
-      accuracy: 0.72,
-    },
-  ],
-};
+describe('data', () => {
+  it('resolves character templates into full profiles', () => {
+    expect(heroProfile.name).toBe('沈孤舟');
+    expect(heroProfile.martialArts).toHaveLength(2);
+    expect(heroProfile.martialArts[0].id).toBe('breaking-shadow-fist');
+    expect(banditProfile.martialArts[0].name).toBe('乱石刀');
+  });
+});
 
 describe('combat', () => {
   it('resolves a deterministic opening attack', () => {

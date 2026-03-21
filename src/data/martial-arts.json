@@ -1,0 +1,26 @@
+[
+  {
+    "id": "breaking-shadow-fist",
+    "name": "破影拳",
+    "type": "waigong",
+    "power": 14,
+    "qiCost": 4,
+    "accuracy": 0.9
+  },
+  {
+    "id": "returning-breath-art",
+    "name": "归息诀",
+    "type": "neigong",
+    "power": 8,
+    "qiCost": 2,
+    "accuracy": 0.88
+  },
+  {
+    "id": "chaos-rock-blade",
+    "name": "乱石刀",
+    "type": "waigong",
+    "power": 9,
+    "qiCost": 3,
+    "accuracy": 0.72
+  }
+]

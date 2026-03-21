@@ -8,11 +8,21 @@ export interface BaseAttributes {
 }
 
 export interface MartialArt {
+    id: string;
     name: string;
     type: MartialArtType;
     power: number;
     qiCost: number;
     accuracy: number;
+}
+
+export interface CharacterTemplate {
+    id: string;
+    name: string;
+    maxHealth: number;
+    maxQi: number;
+    attributes: BaseAttributes;
+    martialArtIds: string[];
 }
 
 export interface CharacterProfile {
@@ -53,7 +63,21 @@ export interface SceneData {
     threats: string[];
 }
 
+export interface GameConfig {
+    initialSceneId: string;
+    heroId: string;
+    rivalId: string;
+}
+
+export interface GameContent {
+    martialArts: MartialArt[];
+    characters: CharacterTemplate[];
+    scenes: SceneData[];
+    config: GameConfig;
+}
+
 export interface GameState {
     currentSceneId: string;
-    hero: CharacterProfile;
+    heroId: string;
+    rivalId: string;
 }

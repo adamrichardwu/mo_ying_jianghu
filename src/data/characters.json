@@ -1,0 +1,33 @@
+[
+  {
+    "id": "hero-shen-guzhou",
+    "name": "沈孤舟",
+    "maxHealth": 72,
+    "maxQi": 28,
+    "attributes": {
+      "strength": 10,
+      "agility": 8,
+      "constitution": 9,
+      "insight": 7
+    },
+    "martialArtIds": [
+      "breaking-shadow-fist",
+      "returning-breath-art"
+    ]
+  },
+  {
+    "id": "bandit-blackwind",
+    "name": "黑风盗",
+    "maxHealth": 48,
+    "maxQi": 12,
+    "attributes": {
+      "strength": 7,
+      "agility": 5,
+      "constitution": 6,
+      "insight": 4
+    },
+    "martialArtIds": [
+      "chaos-rock-blade"
+    ]
+  }
+]

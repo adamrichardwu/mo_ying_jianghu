@@ -70,6 +70,7 @@ export class Character {
         }
 
         return {
+            id: 'basic-guard',
             name: '徒手招架',
             type: 'waigong',
             power: Math.max(1, Math.floor(this.strength / 2)),
