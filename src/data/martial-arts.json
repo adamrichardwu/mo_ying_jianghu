@@ -5,7 +5,15 @@
     "type": "waigong",
     "power": 14,
     "qiCost": 4,
-    "accuracy": 0.9
+    "accuracy": 0.9,
+    "effects": [
+      {
+        "type": "exposed",
+        "target": "target",
+        "duration": 1,
+        "potency": 4
+      }
+    ]
   },
   {
     "id": "returning-breath-art",
@@ -13,7 +21,15 @@
     "type": "neigong",
     "power": 8,
     "qiCost": 2,
-    "accuracy": 0.88
+    "accuracy": 0.88,
+    "effects": [
+      {
+        "type": "focus",
+        "target": "self",
+        "duration": 1,
+        "potency": 3
+      }
+    ]
   },
   {
     "id": "chaos-rock-blade",
@@ -21,6 +37,14 @@
     "type": "waigong",
     "power": 9,
     "qiCost": 3,
-    "accuracy": 0.72
+    "accuracy": 0.72,
+    "effects": [
+      {
+        "type": "bleed",
+        "target": "target",
+        "duration": 2,
+        "potency": 3
+      }
+    ]
   }
 ]

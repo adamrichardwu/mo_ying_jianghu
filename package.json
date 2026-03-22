@@ -1,6 +1,6 @@
 {
   "name": "mo-ying-jianghu",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A martial arts adventure game set in a fictional world.",
   "main": "src/main.ts",
   "scripts": {
