@@ -14,6 +14,7 @@ describe('data', () => {
     expect(heroProfile.name).toBe('沈孤舟');
     expect(heroProfile.equipment.qinggong.name).toBe('踏云追影步');
     expect(heroProfile.equipment.neigong.name).toBe('潮生归元诀');
+    expect(heroProfile.equipment.activeWaigongCategory).toBe('sword');
     expect(heroProfile.equipment.waigong.category).toBe('sword');
     expect(banditProfile.equipment.waigong.category).toBe('hidden-weapon');
   });
@@ -30,8 +31,8 @@ describe('combat', () => {
     expect(action.hit).toBe(true);
     expect(action.martialArt).toBe('清霜江月剑');
     expect(action.technique).toBe('断潮横月');
-    expect(action.damage).toBe(25);
-    expect(action.defenderRemainingHealth).toBe(23);
+    expect(action.damage).toBe(27);
+    expect(action.defenderRemainingHealth).toBe(21);
     expect(action.attackerRemainingQi).toBe(24);
     expect(action.appliedStatuses).toContain('黑风盗获得破绽(4)');
   });
@@ -40,7 +41,7 @@ describe('combat', () => {
     const hero = new Character(heroProfile);
     const bandit = new Character(banditProfile);
 
-    expect(hero.getSpeed()).toBeGreaterThan(bandit.getSpeed());
+    expect(hero.getSpeed()).toBeGreaterThan(heroProfile.attributes.agility);
     expect(hero.getAccuracyBonus('sword')).toBeGreaterThan(bandit.getAccuracyBonus('hidden-weapon'));
   });
 
@@ -52,38 +53,40 @@ describe('combat', () => {
     const defend = combat.resolveDefend(hero);
     const meditate = combat.resolveMeditate(hero);
 
-    expect(defend.guardGained).toBe(9);
-    expect(meditate.qiRecovered).toBe(9);
-    expect(meditate.attackerRemainingQi).toBe(27);
+    expect(defend.guardGained).toBe(12);
+    expect(meditate.qiRecovered).toBe(11);
+    expect(meditate.attackerRemainingQi).toBe(28);
   });
 
   it('allows a basic attack without qi cost', () => {
     const hero = new Character(heroProfile);
     const bandit = new Character(banditProfile);
-    const combat = new Combat();
+    const combat = new Combat(() => 0.99);
 
     const action = combat.resolveBasicAttack(hero, bandit);
 
     expect(action.actionType).toBe('attack');
     expect(action.hit).toBe(true);
-    expect(action.damage).toBe(15);
+    expect(action.martialArt).toBe('清霜江月剑');
+    expect(action.technique).toBe('回澜扫叶');
+    expect(action.damage).toBe(24);
     expect(action.attackerRemainingQi).toBe(heroProfile.maxQi);
-    expect(action.defenderRemainingHealth).toBe(33);
+    expect(action.defenderRemainingHealth).toBe(24);
   });
 
   it('reduces incoming damage after defending', () => {
     const hero = new Character(heroProfile);
     const bandit = new Character(banditProfile);
-    const combat = new Combat();
+    const combat = new Combat(() => 0.99);
 
     const defend = combat.resolveDefend(bandit);
     const action = combat.resolveBasicAttack(hero, bandit);
 
     expect(defend.actionType).toBe('defend');
     expect(defend.guardGained).toBe(9);
-    expect(action.damage).toBe(6);
+    expect(action.damage).toBe(15);
     expect(action.defenderGuard).toBe(0);
-    expect(action.defenderRemainingHealth).toBe(42);
+    expect(action.defenderRemainingHealth).toBe(33);
   });
 
   it('applies focus through sword technique and consumes it on next hit', () => {
@@ -108,7 +111,7 @@ describe('combat', () => {
 
     expect(action.appliedStatuses).toContain('沈孤舟获得流血(3)');
     expect(roundLogs).toContain('沈孤舟因流血损失3点气血。');
-    expect(hero.health).toBe(54);
+    expect(hero.health).toBe(52);
   });
 
   it('finishes a duel with a winner and battle log', () => {
@@ -153,6 +156,47 @@ describe('game', () => {
 
     expect(game.getBattleActions()).toHaveLength(4);
     expect(game.getHeroTechniques().map((technique) => technique.name)).toContain('断潮横月');
+    expect(game.getHeroBasicTechniques().map((technique) => technique.name)).toContain('江风点锋');
     expect(game.getHeroReferenceProfile().equipment.waigong.name).toBe('清霜江月剑');
+    expect(game.getHeroGearOptions().weapon.map((item) => item.name)).toContain('惊涛铁拳套');
+    expect(game.getHeroGearOptions().ring.map((item) => item.name)).toContain('鹰目环');
+    expect(game.getHeroLoadoutOptions().waigong.blade.map((martialArt) => martialArt.name)).toContain('断浪沉锋刀');
+  });
+
+  it('switches active waigong based on weapon category before battle', () => {
+    const game = new Game();
+
+    game.equipHeroWaigong('fist', 'cragbreaker-fist');
+    game.equipHeroMartialArt('qinggong', 'drifting-reed-glide');
+    game.equipHeroGear('weapon', 'storm-iron-gauntlet');
+    game.equipHeroGear('clothes', 'iron-scale-vest');
+    game.equipHeroGear('ring', 'iron-bone-ring');
+
+    const profile = game.getHeroReferenceProfile();
+
+    expect(profile.equipment.waigong.name).toBe('裂岳崩山拳');
+    expect(profile.equipment.activeWaigongCategory).toBe('fist');
+    expect(profile.equipment.qinggong.name).toBe('浮萍掠水纵');
+    expect(profile.gear.weapon?.name).toBe('惊涛铁拳套');
+    expect(profile.gear.clothes.name).toBe('铁鳞短甲');
+    expect(profile.gear.ring.name).toBe('铁骨戒');
+    expect(game.getHeroBasicTechniques().map((technique) => technique.name)).toContain('开碑直拳');
+  });
+
+  it('falls back to base waigong when weapon is removed', () => {
+    const game = new Game();
+
+    game.equipHeroGear('weapon', null);
+
+    const profile = game.getHeroReferenceProfile();
+
+    expect(profile.gear.weapon).toBeNull();
+    expect(profile.equipment.activeWaigongCategory).toBe('fist');
+    expect(profile.equipment.waigong.name).toBe('裂岳崩山拳');
+
+    game.equipHeroWaigong('fist', null);
+
+    const baseProfile = game.getHeroReferenceProfile();
+    expect(baseProfile.equipment.waigong.name).toBe('基础拳脚');
   });
 });

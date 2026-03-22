@@ -17,6 +17,8 @@ const STATUS_NAMES: Record<StatusEffect['type'], string> = {
 export class Combat {
     private readonly battleLog: string[] = [];
 
+    constructor(private readonly random: () => number = Math.random) {}
+
     public resolveRoundEffects(actor: Character): string[] {
         const logs = actor.resolveRoundEffects();
         this.battleLog.push(...logs);
@@ -91,12 +93,13 @@ export class Combat {
         };
     }
 
-    public resolveBasicAttack(attacker: Character, defender: Character): CombatActionResult {
+    public resolveBasicAttack(attacker: Character, defender: Character, technique?: Technique): CombatActionResult {
+        const selectedTechnique = technique ?? this.chooseRandomBasicTechnique(attacker);
         const category = attacker.equippedWaigong.category as WaigongCategory;
         const hadFocus = attacker.hasStatus('focus');
         const exposedBonus = defender.getStatusPotency('exposed');
         const hitChance = clamp(
-            0.8
+            selectedTechnique.accuracy
                 + (attacker.getSpeed() - defender.getSpeed()) * 0.015
                 + attacker.getAccuracyBonus(category)
                 + this.getFocusAccuracyBonus(attacker)
@@ -108,8 +111,8 @@ export class Combat {
         const rawDamage = hit
             ? Math.max(
                 1,
-                attacker.strength
-                    + Math.floor(attacker.agility / 2)
+                selectedTechnique.power
+                    + attacker.strength
                     + attacker.getDamageBonus(category)
                     + this.getFocusDamageBonus(attacker)
                     + exposedBonus
@@ -131,8 +134,8 @@ export class Combat {
         }
 
         const summary = hit
-            ? `${attacker.name}发动普通攻击，对${defender.name}造成${damage}点伤害。`
-            : `${attacker.name}发动普通攻击，但被${defender.name}避开。`;
+            ? `${attacker.name}以${attacker.equippedWaigong.name}使出${selectedTechnique.name}，对${defender.name}造成${damage}点伤害。`
+            : `${attacker.name}使出${selectedTechnique.name}，但被${defender.name}避开。`;
 
         this.battleLog.push(summary);
 
@@ -140,7 +143,8 @@ export class Combat {
             actionType: 'attack',
             attacker: attacker.name,
             defender: defender.name,
-            martialArt: '普通攻击',
+            martialArt: attacker.equippedWaigong.name,
+            technique: selectedTechnique.name,
             hit,
             damage,
             defenderRemainingHealth: defender.health,
@@ -225,6 +229,17 @@ export class Combat {
 
     private getFocusAccuracyBonus(attacker: Character): number {
         return attacker.hasStatus('focus') ? 0.08 : 0;
+    }
+
+    private chooseRandomBasicTechnique(attacker: Character): Technique {
+        const techniques = attacker.getBasicTechniques();
+
+        if (techniques.length === 0) {
+            return attacker.chooseAvailableBasicTechnique();
+        }
+
+        const index = Math.min(techniques.length - 1, Math.floor(this.random() * techniques.length));
+        return techniques[index];
     }
 
     public runDuel(first: Character, second: Character, maxRounds = 6): CombatSummary {

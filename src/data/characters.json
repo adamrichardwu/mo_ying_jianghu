@@ -13,7 +13,93 @@
     "equippedMartialArtIds": {
       "qinggong": "cloud-trace-step",
       "neigong": "tide-surge-heart",
-      "waigong": "frost-river-sword"
+      "waigong": {
+        "fist": "cragbreaker-fist",
+        "blade": "surging-tide-blade",
+        "sword": "frost-river-sword",
+        "staff": "river-guard-staff",
+        "hidden-weapon": "falling-star-needles"
+      }
+    },
+    "knownMartialArtIds": {
+      "qinggong": [
+        "cloud-trace-step",
+        "drifting-reed-glide",
+        "swallow-feather-shift",
+        "mist-walker-turn"
+      ],
+      "neigong": [
+        "tide-surge-heart",
+        "iron-wall-breath",
+        "blazing-core-mantra",
+        "jade-pulse-canon"
+      ],
+      "waigong": {
+        "fist": [
+          "cragbreaker-fist"
+        ],
+        "blade": [
+          "surging-tide-blade"
+        ],
+        "sword": [
+          "frost-river-sword",
+          "autumn-water-sword"
+        ],
+        "staff": [
+          "river-guard-staff"
+        ],
+        "hidden-weapon": [
+          "falling-star-needles"
+        ]
+      }
+    },
+    "equippedGearIds": {
+      "weapon": "willow-leaf-sword",
+      "clothes": "bamboo-guard-robe",
+      "accessory": "warm-jade-pendant",
+      "bracer": "soft-silk-bracer",
+      "shoes": "reedstep-boots",
+      "hat": "traveler-headband",
+      "ring": "hawk-eye-ring"
+    },
+    "knownGearIds": {
+      "weapon": [
+        "willow-leaf-sword",
+        "storm-iron-gauntlet",
+        "green-edge-saber",
+        "river-pattern-staff",
+        "swallowtail-needle-case"
+      ],
+      "clothes": [
+        "bamboo-guard-robe",
+        "iron-scale-vest",
+        "night-silk-cloak"
+      ],
+      "accessory": [
+        "warm-jade-pendant",
+        "swift-shadow-charm",
+        "jade-safety-lock"
+      ],
+      "bracer": [
+        "iron-guard-bracer",
+        "soft-silk-bracer",
+        "hidden-arrow-bracer"
+      ],
+      "shoes": [
+        "reedstep-boots",
+        "stonewalk-boots",
+        "feathertrace-boots"
+      ],
+      "hat": [
+        "bamboo-hat",
+        "traveler-headband",
+        "black-veil-hood"
+      ],
+      "ring": [
+        "hawk-eye-ring",
+        "river-jade-ring",
+        "iron-bone-ring"
+      ]
     }
   },
   {
@@ -30,7 +116,62 @@
     "equippedMartialArtIds": {
       "qinggong": "swallow-feather-shift",
       "neigong": "iron-wall-breath",
-      "waigong": "falling-star-needles"
+      "waigong": {
+        "fist": null,
+        "blade": null,
+        "sword": null,
+        "staff": null,
+        "hidden-weapon": "falling-star-needles"
+      }
+    },
+    "knownMartialArtIds": {
+      "qinggong": [
+        "swallow-feather-shift"
+      ],
+      "neigong": [
+        "iron-wall-breath"
+      ],
+      "waigong": {
+        "fist": [],
+        "blade": [],
+        "sword": [],
+        "staff": [],
+        "hidden-weapon": [
+          "falling-star-needles"
+        ]
+      }
+    },
+    "equippedGearIds": {
+      "weapon": "swallowtail-needle-case",
+      "clothes": "night-silk-cloak",
+      "accessory": "swift-shadow-charm",
+      "bracer": "hidden-arrow-bracer",
+      "shoes": "feathertrace-boots",
+      "hat": "black-veil-hood",
+      "ring": "hawk-eye-ring"
+    },
+    "knownGearIds": {
+      "weapon": [
+        "swallowtail-needle-case"
+      ],
+      "clothes": [
+        "night-silk-cloak"
+      ],
+      "accessory": [
+        "swift-shadow-charm"
+      ],
+      "bracer": [
+        "hidden-arrow-bracer"
+      ],
+      "shoes": [
+        "feathertrace-boots"
+      ],
+      "hat": [
+        "black-veil-hood"
+      ],
+      "ring": [
+        "hawk-eye-ring"
+      ]
     }
   }
 ]

@@ -5,6 +5,8 @@ import { SceneManager } from './scenes';
 import type {
     CombatActionResult,
     CombatSummary,
+    EquippedGearIds,
+    EquippedMartialArtIds,
     EncounterState,
     GameContent,
     GameState,
@@ -12,6 +14,7 @@ import type {
     SceneData,
     Technique,
     TurnResult,
+    WaigongCategory,
 } from './types';
 
 interface StartSummary {
@@ -33,13 +36,21 @@ export class Game {
     constructor() {
         this.content = loadGameContent();
         this.sceneManager = new SceneManager(this.content.scenes, this.content.config.initialSceneId);
+        const heroTemplate = this.content.characters.find((entry) => entry.id === this.content.config.heroId);
+
+        if (!heroTemplate) {
+            throw new Error(`Character template not found: ${this.content.config.heroId}`);
+        }
+
         this.state = {
             currentSceneId: this.content.config.initialSceneId,
             heroId: this.content.config.heroId,
             rivalId: this.content.config.rivalId,
+            heroLoadout: { ...heroTemplate.equippedMartialArtIds },
+            heroGearLoadout: { ...heroTemplate.equippedGearIds },
         };
         this.scene = this.sceneManager.loadScene(this.state.currentSceneId);
-        this.hero = new Character(buildCharacterProfile(this.content, this.state.heroId));
+        this.hero = new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout));
         this.rival = new Character(buildCharacterProfile(this.content, this.state.rivalId));
         this.combat = new Combat();
         this.round = 1;
@@ -47,7 +58,7 @@ export class Game {
 
     start(): StartSummary {
         const scene = this.sceneManager.loadScene(this.state.currentSceneId);
-        const hero = new Character(buildCharacterProfile(this.content, this.state.heroId));
+        const hero = new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout));
         const rival = new Character(buildCharacterProfile(this.content, this.state.rivalId));
         const combat = new Combat();
         const battle = combat.runDuel(hero, rival);
@@ -131,11 +142,73 @@ export class Game {
     }
 
     getHeroReferenceProfile(): ReturnType<Character['snapshot']> {
-        return new Character(buildCharacterProfile(this.content, this.state.heroId)).snapshot();
+        return new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout)).snapshot();
     }
 
     getHeroTechniques(): Technique[] {
-        return buildCharacterProfile(this.content, this.state.heroId).equipment.waigong.techniques ?? [];
+        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout).equipment.waigong.techniques ?? [];
+    }
+
+    getHeroBasicTechniques(): Technique[] {
+        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout).equipment.waigong.basicTechniques ?? [];
+    }
+
+    getHeroLoadoutOptions(): ReturnType<Character['snapshot']>['knownMartialArts'] {
+        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout).knownMartialArts;
+    }
+
+    getHeroGearOptions(): ReturnType<Character['snapshot']>['knownGear'] {
+        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout).knownGear;
+    }
+
+    equipHeroMartialArt(slot: 'qinggong' | 'neigong', martialArtId: string): void {
+        const options = this.getHeroLoadoutOptions()[slot];
+
+        if (!options.some((martialArt) => martialArt.id === martialArtId)) {
+            throw new Error(`Martial art not available for slot ${slot}: ${martialArtId}`);
+        }
+
+        this.state.heroLoadout = {
+            ...this.state.heroLoadout,
+            [slot]: martialArtId,
+        };
+    }
+
+    equipHeroWaigong(category: WaigongCategory, martialArtId: string | null): void {
+        const options = this.getHeroLoadoutOptions().waigong[category];
+
+        if (martialArtId && !options.some((martialArt) => martialArt.id === martialArtId)) {
+            throw new Error(`Martial art not available for waigong category ${category}: ${martialArtId}`);
+        }
+
+        this.state.heroLoadout = {
+            ...this.state.heroLoadout,
+            waigong: {
+                ...this.state.heroLoadout.waigong,
+                [category]: martialArtId,
+            },
+        };
+    }
+
+    equipHeroGear(slot: keyof EquippedGearIds, gearId: string | null): void {
+        const options = this.getHeroGearOptions()[slot];
+
+        if (slot === 'weapon' && gearId === null) {
+            this.state.heroGearLoadout = {
+                ...this.state.heroGearLoadout,
+                weapon: null,
+            };
+            return;
+        }
+
+        if (!gearId || !options.some((item) => item.id === gearId)) {
+            throw new Error(`Gear not available for slot ${slot}: ${gearId}`);
+        }
+
+        this.state.heroGearLoadout = {
+            ...this.state.heroGearLoadout,
+            [slot]: gearId,
+        };
     }
 
     getBattleActions(): Array<{ code: string; action: PlayerAction; label: string }> {
@@ -149,7 +222,7 @@ export class Game {
 
     private resetEncounter(): void {
         this.scene = this.sceneManager.loadScene(this.state.currentSceneId);
-        this.hero = new Character(buildCharacterProfile(this.content, this.state.heroId));
+        this.hero = new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout));
         this.rival = new Character(buildCharacterProfile(this.content, this.state.rivalId));
         this.combat = new Combat();
         this.round = 1;
@@ -158,7 +231,7 @@ export class Game {
     private resolvePlayerAction(action: PlayerAction, techniqueId?: string): CombatActionResult {
         switch (action) {
             case 'attack':
-                return this.combat.resolveBasicAttack(this.hero, this.rival);
+                return this.combat.resolveBasicAttack(this.hero, this.rival, techniqueId ? this.hero.getBasicTechniqueById(techniqueId) : undefined);
             case 'defend':
                 return this.combat.resolveDefend(this.hero);
             case 'meditate':
@@ -212,5 +285,15 @@ export class Game {
             defenderGuard: this.rival.guard,
             summary: `${this.hero.name}尚未来得及出手，已被抢先压制。`,
         };
+    }
+
+    private getHeroTemplate() {
+        const template = this.content.characters.find((entry) => entry.id === this.state.heroId);
+
+        if (!template) {
+            throw new Error(`Character template not found: ${this.state.heroId}`);
+        }
+
+        return template;
     }
 }

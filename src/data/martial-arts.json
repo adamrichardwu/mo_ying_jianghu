@@ -1,4 +1,4 @@
-[
+[ 
   {
     "id": "cloud-trace-step",
     "name": "踏云追影步",
@@ -9,6 +9,18 @@
       "accuracy": 0.08,
       "evasion": 0.06,
       "speed": 3
+    }
+  },
+  {
+    "id": "drifting-reed-glide",
+    "name": "浮萍掠水纵",
+    "type": "qinggong",
+    "category": "movement",
+    "description": "借水意变步，短促爆发极快，适合先发压制。",
+    "passiveBonuses": {
+      "accuracy": 0.06,
+      "evasion": 0.04,
+      "speed": 4
     }
   },
   {
@@ -24,6 +36,18 @@
     }
   },
   {
+    "id": "mist-walker-turn",
+    "name": "雾行回身步",
+    "type": "qinggong",
+    "category": "movement",
+    "description": "借迷踪错位扰乱对手判断，适合拳路与奇袭。",
+    "passiveBonuses": {
+      "accuracy": 0.05,
+      "evasion": 0.05,
+      "speed": 3
+    }
+  },
+  {
     "id": "tide-surge-heart",
     "name": "潮生归元诀",
     "type": "neigong",
@@ -35,9 +59,7 @@
     },
     "synergy": [
       {
-        "waigongCategories": [
-          "sword"
-        ],
+        "waigongCategories": ["sword"],
         "accuracy": 0.06,
         "damage": 3,
         "qiRecovery": 1,
@@ -57,13 +79,227 @@
     },
     "synergy": [
       {
-        "waigongCategories": [
-          "hidden-weapon"
-        ],
+        "waigongCategories": ["hidden-weapon"],
         "accuracy": 0.05,
         "damage": 2,
         "qiRecovery": 1,
         "guard": 2
+      }
+    ]
+  },
+  {
+    "id": "blazing-core-mantra",
+    "name": "赤炉混元功",
+    "type": "neigong",
+    "category": "internal",
+    "description": "真气运行刚猛，专门放大拳路爆发与护体反震。",
+    "passiveBonuses": {
+      "qiRecovery": 1,
+      "guard": 1,
+      "damage": 1
+    },
+    "synergy": [
+      {
+        "waigongCategories": ["fist"],
+        "accuracy": 0.03,
+        "damage": 4,
+        "qiRecovery": 1,
+        "guard": 1
+      }
+    ]
+  },
+  {
+    "id": "jade-pulse-canon",
+    "name": "玉脉回照功",
+    "type": "neigong",
+    "category": "internal",
+    "description": "真气运转细密绵长，适合稳守反击和轻功联动。",
+    "passiveBonuses": {
+      "qiRecovery": 2,
+      "guard": 1
+    },
+    "synergy": [
+      {
+        "waigongCategories": ["sword", "hidden-weapon"],
+        "accuracy": 0.04,
+        "damage": 2,
+        "qiRecovery": 1,
+        "guard": 1
+      }
+    ]
+  },
+  {
+    "id": "basic-fist-art",
+    "name": "基础拳脚",
+    "type": "waigong",
+    "category": "fist",
+    "description": "未装备拳法时默认施展的基础拳脚套路。",
+    "basicTechniques": [
+      {
+        "id": "basic-fist-jab",
+        "name": "正身直冲",
+        "description": "朴实直接的起手拳。",
+        "power": 7,
+        "qiCost": 0,
+        "accuracy": 0.88
+      },
+      {
+        "id": "basic-fist-step",
+        "name": "错步横摆",
+        "description": "借步法摆拳压迫。",
+        "power": 8,
+        "qiCost": 0,
+        "accuracy": 0.82
+      }
+    ],
+    "techniques": [
+      {
+        "id": "basic-fist-drive",
+        "name": "并步冲拳",
+        "description": "聚力一线，逼退来敌。",
+        "power": 10,
+        "qiCost": 2,
+        "accuracy": 0.84
+      }
+    ]
+  },
+  {
+    "id": "basic-blade-art",
+    "name": "基础刀法",
+    "type": "waigong",
+    "category": "blade",
+    "description": "未装备刀法时默认施展的基础劈砍套路。",
+    "basicTechniques": [
+      {
+        "id": "basic-blade-chop",
+        "name": "顺劈开路",
+        "description": "上势直劈，重在压人。",
+        "power": 8,
+        "qiCost": 0,
+        "accuracy": 0.83
+      },
+      {
+        "id": "basic-blade-draw",
+        "name": "横刀断势",
+        "description": "横斩截断来路。",
+        "power": 9,
+        "qiCost": 0,
+        "accuracy": 0.78
+      }
+    ],
+    "techniques": [
+      {
+        "id": "basic-blade-cleave",
+        "name": "沉锋破势",
+        "description": "借沉势重劈压制对手。",
+        "power": 11,
+        "qiCost": 2,
+        "accuracy": 0.8
+      }
+    ]
+  },
+  {
+    "id": "basic-sword-art",
+    "name": "基础剑式",
+    "type": "waigong",
+    "category": "sword",
+    "description": "未装备剑法时默认施展的基础刺削套路。",
+    "basicTechniques": [
+      {
+        "id": "basic-sword-thrust",
+        "name": "平刺探路",
+        "description": "平稳探路的基础一刺。",
+        "power": 7,
+        "qiCost": 0,
+        "accuracy": 0.9
+      },
+      {
+        "id": "basic-sword-cut",
+        "name": "斜削分云",
+        "description": "轻快斜削，衔接顺畅。",
+        "power": 8,
+        "qiCost": 0,
+        "accuracy": 0.84
+      }
+    ],
+    "techniques": [
+      {
+        "id": "basic-sword-draw",
+        "name": "并锋进步",
+        "description": "提锋进身，一气呵成。",
+        "power": 10,
+        "qiCost": 2,
+        "accuracy": 0.86
+      }
+    ]
+  },
+  {
+    "id": "basic-staff-art",
+    "name": "基础棍法",
+    "type": "waigong",
+    "category": "staff",
+    "description": "未装备棍法时默认施展的基础压扫套路。",
+    "basicTechniques": [
+      {
+        "id": "basic-staff-press",
+        "name": "压肩直点",
+        "description": "棍端直点，重在控距。",
+        "power": 7,
+        "qiCost": 0,
+        "accuracy": 0.87
+      },
+      {
+        "id": "basic-staff-sweep",
+        "name": "平棍扫膝",
+        "description": "低扫迫使对手收势。",
+        "power": 8,
+        "qiCost": 0,
+        "accuracy": 0.81
+      }
+    ],
+    "techniques": [
+      {
+        "id": "basic-staff-drop",
+        "name": "沉棍压顶",
+        "description": "借杆身长度正面压迫。",
+        "power": 10,
+        "qiCost": 2,
+        "accuracy": 0.84
+      }
+    ]
+  },
+  {
+    "id": "basic-hidden-weapon-art",
+    "name": "基础暗器术",
+    "type": "waigong",
+    "category": "hidden-weapon",
+    "description": "未装备暗器秘法时默认施展的基础暗器手法。",
+    "basicTechniques": [
+      {
+        "id": "basic-hidden-weapon-flick",
+        "name": "拂手掷芒",
+        "description": "抬手即发的基础试探。",
+        "power": 6,
+        "qiCost": 0,
+        "accuracy": 0.9
+      },
+      {
+        "id": "basic-hidden-weapon-sling",
+        "name": "错袖回针",
+        "description": "借衣袖转势发针。",
+        "power": 8,
+        "qiCost": 0,
+        "accuracy": 0.82
+      }
+    ],
+    "techniques": [
+      {
+        "id": "basic-hidden-weapon-burst",
+        "name": "连珠散手",
+        "description": "接连出手压制对方走位。",
+        "power": 10,
+        "qiCost": 2,
+        "accuracy": 0.83
       }
     ]
   },
@@ -73,6 +309,24 @@
     "type": "waigong",
     "category": "sword",
     "description": "强调命中、破绽与节奏转换的均衡剑路。",
+    "basicTechniques": [
+      {
+        "id": "sword-wind-peck",
+        "name": "江风点锋",
+        "description": "轻快试探，伤害较低但更稳。",
+        "power": 8,
+        "qiCost": 0,
+        "accuracy": 0.92
+      },
+      {
+        "id": "sword-arc-sweep",
+        "name": "回澜扫叶",
+        "description": "横削一线，伤害更高但命中略降。",
+        "power": 11,
+        "qiCost": 0,
+        "accuracy": 0.84
+      }
+    ],
     "techniques": [
       {
         "id": "moonbreak-draw",
@@ -130,6 +384,24 @@
     "type": "waigong",
     "category": "fist",
     "description": "拳路厚重，重视破防与连打，适合正面压制。",
+    "basicTechniques": [
+      {
+        "id": "fist-straight-crash",
+        "name": "开碑直拳",
+        "description": "起手直接，威力均衡。",
+        "power": 9,
+        "qiCost": 0,
+        "accuracy": 0.88
+      },
+      {
+        "id": "fist-rib-hook",
+        "name": "沉肘锁肋",
+        "description": "命中略低，但重击效果更强。",
+        "power": 12,
+        "qiCost": 0,
+        "accuracy": 0.8
+      }
+    ],
     "techniques": [
       {
         "id": "stone-splitting-pulse",
@@ -163,6 +435,24 @@
     "type": "waigong",
     "category": "hidden-weapon",
     "description": "以暗器游斗为核心，擅长叠加流血并逼迫失位。",
+    "basicTechniques": [
+      {
+        "id": "needle-flick",
+        "name": "弹指飞芒",
+        "description": "轻巧快射，胜在起手迅捷。",
+        "power": 7,
+        "qiCost": 0,
+        "accuracy": 0.9
+      },
+      {
+        "id": "hidden-reverse-thorn",
+        "name": "反袖藏芒",
+        "description": "藏锋后发，命中后更痛。",
+        "power": 10,
+        "qiCost": 0,
+        "accuracy": 0.82
+      }
+    ],
     "techniques": [
       {
         "id": "firefly-scatter",
@@ -193,6 +483,167 @@
             "target": "target",
             "duration": 2,
             "potency": 4
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "surging-tide-blade",
+    "name": "断浪沉锋刀",
+    "type": "waigong",
+    "category": "blade",
+    "description": "刀路沉猛，擅长正面斩压与破防。",
+    "basicTechniques": [
+      {
+        "id": "blade-wave-chop",
+        "name": "裂潮劈岸",
+        "description": "沉肩直劈，重在压制。",
+        "power": 10,
+        "qiCost": 0,
+        "accuracy": 0.8
+      },
+      {
+        "id": "blade-back-cut",
+        "name": "回锋抹喉",
+        "description": "回身带刀，斜斩一线。",
+        "power": 11,
+        "qiCost": 0,
+        "accuracy": 0.76
+      }
+    ],
+    "techniques": [
+      {
+        "id": "blade-tide-crush",
+        "name": "断浪压城",
+        "description": "借整势猛压，逼得对手失衡。",
+        "power": 15,
+        "qiCost": 4,
+        "accuracy": 0.82,
+        "effects": [
+          {
+            "type": "exposed",
+            "target": "target",
+            "duration": 1,
+            "potency": 4
+          }
+        ]
+      },
+      {
+        "id": "blade-heavy-drop",
+        "name": "沉锋落岳",
+        "description": "重势压顶，专破守势。",
+        "power": 17,
+        "qiCost": 5,
+        "accuracy": 0.76
+      }
+    ]
+  },
+  {
+    "id": "river-guard-staff",
+    "name": "横江伏波棍",
+    "type": "waigong",
+    "category": "staff",
+    "description": "棍路稳健，擅长控距、压节奏与守中带攻。",
+    "basicTechniques": [
+      {
+        "id": "staff-river-point",
+        "name": "横杆点波",
+        "description": "以棍端试探来路。",
+        "power": 8,
+        "qiCost": 0,
+        "accuracy": 0.88
+      },
+      {
+        "id": "staff-sweep-bank",
+        "name": "扫岸平沙",
+        "description": "平扫扩线，稳定控距。",
+        "power": 9,
+        "qiCost": 0,
+        "accuracy": 0.82
+      }
+    ],
+    "techniques": [
+      {
+        "id": "staff-hold-current",
+        "name": "伏流定势",
+        "description": "先压其位，再逼其门户。",
+        "power": 12,
+        "qiCost": 3,
+        "accuracy": 0.87,
+        "effects": [
+          {
+            "type": "focus",
+            "target": "self",
+            "duration": 1,
+            "potency": 1
+          }
+        ]
+      },
+      {
+        "id": "staff-wave-smash",
+        "name": "翻江击浪",
+        "description": "借腰胯发整劲重砸。",
+        "power": 14,
+        "qiCost": 4,
+        "accuracy": 0.81
+      }
+    ]
+  },
+  {
+    "id": "autumn-water-sword",
+    "name": "秋水分波剑",
+    "type": "waigong",
+    "category": "sword",
+    "description": "更偏游斗与追击的轻灵剑路。",
+    "basicTechniques": [
+      {
+        "id": "autumn-tip-thrust",
+        "name": "秋锋一点",
+        "description": "直点咽喉，起手极快。",
+        "power": 7,
+        "qiCost": 0,
+        "accuracy": 0.94
+      },
+      {
+        "id": "water-ripple-cut",
+        "name": "水纹横裁",
+        "description": "横切一线，节奏轻快。",
+        "power": 10,
+        "qiCost": 0,
+        "accuracy": 0.86
+      }
+    ],
+    "techniques": [
+      {
+        "id": "cold-stream-split",
+        "name": "寒汀分流",
+        "description": "先断招架，再借势追击。",
+        "power": 13,
+        "qiCost": 4,
+        "accuracy": 0.9,
+        "effects": [
+          {
+            "type": "exposed",
+            "target": "target",
+            "duration": 1,
+            "potency": 3
+          }
+        ]
+      },
+      {
+        "id": "returning-cold-light",
+        "name": "回光映雪",
+        "description": "借剑光回照自身，凝神再出。",
+        "power": 9,
+        "qiCost": 3,
+        "accuracy": 0.93,
+        "effects": [
+          {
+            "type": "focus",
+            "target": "self",
+            "duration": 1,
+            "potency": 2
           }
         ]
       }

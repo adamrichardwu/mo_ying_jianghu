@@ -1,6 +1,7 @@
 export type MartialArtType = 'qinggong' | 'neigong' | 'waigong';
-export type WaigongCategory = 'sword' | 'fist' | 'hidden-weapon';
+export type WaigongCategory = 'fist' | 'blade' | 'sword' | 'staff' | 'hidden-weapon';
 export type MartialArtCategory = 'movement' | 'internal' | WaigongCategory;
+export type GearSlot = 'weapon' | 'clothes' | 'accessory' | 'bracer' | 'shoes' | 'hat' | 'ring';
 
 export interface BaseAttributes {
     strength: number;
@@ -18,6 +19,7 @@ export interface MartialArt {
     passiveBonuses?: Partial<PassiveBonuses>;
     synergy?: SynergyBonus[];
     techniques?: Technique[];
+    basicTechniques?: Technique[];
 }
 
 export interface Technique {
@@ -37,6 +39,28 @@ export interface PassiveBonuses {
     qiRecovery: number;
     guard: number;
     damage: number;
+}
+
+export interface GearBonuses {
+    strength: number;
+    agility: number;
+    constitution: number;
+    insight: number;
+    accuracy: number;
+    evasion: number;
+    speed: number;
+    damage: number;
+    guard: number;
+    qiRecovery: number;
+}
+
+export interface GearItem {
+    id: string;
+    name: string;
+    slot: GearSlot;
+    description: string;
+    weaponCategory?: WaigongCategory;
+    bonuses: Partial<GearBonuses>;
 }
 
 export interface SynergyBonus {
@@ -71,18 +95,79 @@ export interface CharacterTemplate {
     maxQi: number;
     attributes: BaseAttributes;
     equippedMartialArtIds: EquippedMartialArtIds;
+    knownMartialArtIds: KnownMartialArtIds;
+    equippedGearIds: EquippedGearIds;
+    knownGearIds: KnownGearIds;
 }
 
 export interface EquippedMartialArtIds {
     qinggong: string;
     neigong: string;
-    waigong: string;
+    waigong: EquippedWaigongIds;
+}
+
+export type EquippedWaigongIds = Record<WaigongCategory, string | null>;
+
+export interface EquippedGearIds {
+    weapon: string | null;
+    clothes: string;
+    accessory: string;
+    bracer: string;
+    shoes: string;
+    hat: string;
+    ring: string;
 }
 
 export interface EquippedMartialArts {
     qinggong: MartialArt;
     neigong: MartialArt;
     waigong: MartialArt;
+    waigongLoadout: Record<WaigongCategory, MartialArt>;
+    activeWaigongCategory: WaigongCategory;
+}
+
+export interface EquippedGear {
+    weapon: GearItem | null;
+    clothes: GearItem;
+    accessory: GearItem;
+    bracer: GearItem;
+    shoes: GearItem;
+    hat: GearItem;
+    ring: GearItem;
+}
+
+export interface KnownMartialArtIds {
+    qinggong: string[];
+    neigong: string[];
+    waigong: KnownWaigongIds;
+}
+
+export type KnownWaigongIds = Record<WaigongCategory, string[]>;
+
+export interface KnownGearIds {
+    weapon: string[];
+    clothes: string[];
+    accessory: string[];
+    bracer: string[];
+    shoes: string[];
+    hat: string[];
+    ring: string[];
+}
+
+export interface KnownMartialArts {
+    qinggong: MartialArt[];
+    neigong: MartialArt[];
+    waigong: Record<WaigongCategory, MartialArt[]>;
+}
+
+export interface KnownGear {
+    weapon: GearItem[];
+    clothes: GearItem[];
+    accessory: GearItem[];
+    bracer: GearItem[];
+    shoes: GearItem[];
+    hat: GearItem[];
+    ring: GearItem[];
 }
 
 export interface CharacterProfile {
@@ -91,6 +176,9 @@ export interface CharacterProfile {
     maxQi: number;
     attributes: BaseAttributes;
     equipment: EquippedMartialArts;
+    knownMartialArts: KnownMartialArts;
+    gear: EquippedGear;
+    knownGear: KnownGear;
 }
 
 export interface CharacterState {
@@ -142,6 +230,7 @@ export interface GameConfig {
 
 export interface GameContent {
     martialArts: MartialArt[];
+    gear: GearItem[];
     characters: CharacterTemplate[];
     scenes: SceneData[];
     config: GameConfig;
@@ -151,6 +240,8 @@ export interface GameState {
     currentSceneId: string;
     heroId: string;
     rivalId: string;
+    heroLoadout: EquippedMartialArtIds;
+    heroGearLoadout: EquippedGearIds;
 }
 
 export interface EncounterState {

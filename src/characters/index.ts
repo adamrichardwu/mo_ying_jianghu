@@ -1,6 +1,8 @@
 import type {
     CharacterProfile,
     CharacterState,
+    GearBonuses,
+    GearItem,
     MartialArt,
     StatusEffect,
     StatusEffectType,
@@ -51,6 +53,18 @@ export class Character {
         return this.profile.equipment;
     }
 
+    get knownMartialArts(): CharacterProfile['knownMartialArts'] {
+        return this.profile.knownMartialArts;
+    }
+
+    get gear(): CharacterProfile['gear'] {
+        return this.profile.gear;
+    }
+
+    get knownGear(): CharacterProfile['knownGear'] {
+        return this.profile.knownGear;
+    }
+
     get equippedQinggong(): MartialArt {
         return this.profile.equipment.qinggong;
     }
@@ -63,24 +77,32 @@ export class Character {
         return this.profile.equipment.waigong;
     }
 
+    get waigongLoadout(): CharacterProfile['equipment']['waigongLoadout'] {
+        return this.profile.equipment.waigongLoadout;
+    }
+
+    get activeWaigongCategory(): WaigongCategory {
+        return this.profile.equipment.activeWaigongCategory;
+    }
+
     get statuses(): StatusEffect[] {
         return this.state.statuses.map((status) => ({ ...status }));
     }
 
     get agility(): number {
-        return this.profile.attributes.agility;
+        return this.profile.attributes.agility + this.getGearBonus('agility');
     }
 
     get strength(): number {
-        return this.profile.attributes.strength;
+        return this.profile.attributes.strength + this.getGearBonus('strength');
     }
 
     get constitution(): number {
-        return this.profile.attributes.constitution;
+        return this.profile.attributes.constitution + this.getGearBonus('constitution');
     }
 
     get insight(): number {
-        return this.profile.attributes.insight;
+        return this.profile.attributes.insight + this.getGearBonus('insight');
     }
 
     isDefeated(): boolean {
@@ -163,15 +185,44 @@ export class Character {
     }
 
     getMartialArtById(martialArtId: string): MartialArt | undefined {
-        return Object.values(this.profile.equipment).find((martialArt) => martialArt.id === martialArtId);
+        return [
+            this.profile.equipment.qinggong,
+            this.profile.equipment.neigong,
+            ...Object.values(this.profile.equipment.waigongLoadout),
+        ].find((martialArt) => martialArt.id === martialArtId);
     }
 
     getTechniqueById(techniqueId: string): Technique | undefined {
         return this.equippedWaigong.techniques?.find((technique) => technique.id === techniqueId);
     }
 
+    getBasicTechniqueById(techniqueId: string): Technique | undefined {
+        return this.equippedWaigong.basicTechniques?.find((technique) => technique.id === techniqueId);
+    }
+
+    getBasicTechniques(): Technique[] {
+        return this.equippedWaigong.basicTechniques ?? [];
+    }
+
     getAvailableTechniques(): Technique[] {
         return (this.equippedWaigong.techniques ?? []).filter((technique) => technique.qiCost <= this.qi);
+    }
+
+    chooseAvailableBasicTechnique(): Technique {
+        const basicTechniques = this.getBasicTechniques();
+
+        if (basicTechniques.length > 0) {
+            return [...basicTechniques].sort((left, right) => right.power - left.power)[0];
+        }
+
+        return {
+            id: 'basic-strike',
+            name: '基础出手',
+            description: '当外功未提供基础招式时使用的默认攻击。',
+            power: Math.max(1, Math.floor(this.strength / 2)),
+            qiCost: 0,
+            accuracy: 0.85,
+        };
     }
 
     chooseAvailableTechnique(): Technique {
@@ -192,31 +243,39 @@ export class Character {
     }
 
     getSpeed(): number {
-        return this.agility + (this.equippedQinggong.passiveBonuses?.speed ?? 0);
+        return this.agility + (this.equippedQinggong.passiveBonuses?.speed ?? 0) + this.getGearBonus('speed');
     }
 
     getAccuracyBonus(category: WaigongCategory): number {
         return (this.equippedQinggong.passiveBonuses?.accuracy ?? 0)
-            + this.getSynergyBonus(category).accuracy;
+            + this.getSynergyBonus(category).accuracy
+            + this.getGearBonus('accuracy');
     }
 
     getEvasionBonus(): number {
-        return this.equippedQinggong.passiveBonuses?.evasion ?? 0;
+        return (this.equippedQinggong.passiveBonuses?.evasion ?? 0) + this.getGearBonus('evasion');
     }
 
     getDamageBonus(category: WaigongCategory): number {
         return (this.equippedNeigong.passiveBonuses?.damage ?? 0)
-            + this.getSynergyBonus(category).damage;
+            + this.getSynergyBonus(category).damage
+            + this.getGearBonus('damage');
     }
 
     getQiRecoveryBonus(category: WaigongCategory): number {
         return (this.equippedNeigong.passiveBonuses?.qiRecovery ?? 0)
-            + this.getSynergyBonus(category).qiRecovery;
+            + this.getSynergyBonus(category).qiRecovery
+            + this.getGearBonus('qiRecovery');
     }
 
     getGuardBonus(category: WaigongCategory): number {
         return (this.equippedNeigong.passiveBonuses?.guard ?? 0)
-            + this.getSynergyBonus(category).guard;
+            + this.getSynergyBonus(category).guard
+            + this.getGearBonus('guard');
+    }
+
+    getGearItem(slot: GearItem['slot']): GearItem | null {
+        return this.profile.gear[slot];
     }
 
     private getSynergyBonus(category: WaigongCategory): SynergyBonus {
@@ -227,6 +286,10 @@ export class Character {
             qiRecovery: 0,
             guard: 0,
         };
+    }
+
+    private getGearBonus(key: keyof GearBonuses): number {
+        return Object.values(this.profile.gear).reduce((total, item) => total + (item?.bonuses[key] ?? 0), 0);
     }
 
     snapshot(): CharacterProfile & CharacterState {
