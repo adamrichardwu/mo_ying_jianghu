@@ -15,6 +15,7 @@ import type {
     GameContent,
     GearItem,
     KnownGear,
+    KnownGearIds,
     KnownMartialArts,
     MartialArt,
     SceneData,
@@ -36,6 +37,7 @@ export function buildCharacterProfile(
     characterId: string,
     loadoutOverride?: EquippedMartialArtIds,
     gearOverride?: EquippedGearIds,
+    knownGearOverride?: KnownGearIds,
 ): CharacterProfile {
     const template = content.characters.find((entry) => entry.id === characterId);
 
@@ -46,7 +48,7 @@ export function buildCharacterProfile(
     const gear = resolveGear(content.gear, gearOverride ?? template.equippedGearIds);
     const equipment = resolveEquipment(content.martialArts, loadoutOverride ?? template.equippedMartialArtIds, gear);
     const knownMartialArts = resolveKnownMartialArts(content.martialArts, template);
-    const knownGear = resolveKnownGear(content.gear, template);
+    const knownGear = resolveKnownGear(content.gear, knownGearOverride ?? template.knownGearIds);
 
     return {
         name: template.name,
@@ -109,15 +111,15 @@ function resolveWaigongLoadout(martialArts: MartialArt[], equippedIds: EquippedM
     };
 }
 
-function resolveKnownGear(gear: GearItem[], template: CharacterTemplate): KnownGear {
+function resolveKnownGear(gear: GearItem[], knownGearIds: KnownGearIds): KnownGear {
     return {
-        weapon: template.knownGearIds.weapon.map((id) => findGear(gear, id)),
-        clothes: template.knownGearIds.clothes.map((id) => findGear(gear, id)),
-        accessory: template.knownGearIds.accessory.map((id) => findGear(gear, id)),
-        bracer: template.knownGearIds.bracer.map((id) => findGear(gear, id)),
-        shoes: template.knownGearIds.shoes.map((id) => findGear(gear, id)),
-        hat: template.knownGearIds.hat.map((id) => findGear(gear, id)),
-        ring: template.knownGearIds.ring.map((id) => findGear(gear, id)),
+        weapon: knownGearIds.weapon.map((id) => findGear(gear, id)),
+        clothes: knownGearIds.clothes.map((id) => findGear(gear, id)),
+        accessory: knownGearIds.accessory.map((id) => findGear(gear, id)),
+        bracer: knownGearIds.bracer.map((id) => findGear(gear, id)),
+        shoes: knownGearIds.shoes.map((id) => findGear(gear, id)),
+        hat: knownGearIds.hat.map((id) => findGear(gear, id)),
+        ring: knownGearIds.ring.map((id) => findGear(gear, id)),
     };
 }
 

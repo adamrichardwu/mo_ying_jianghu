@@ -2,6 +2,7 @@ export type MartialArtType = 'qinggong' | 'neigong' | 'waigong';
 export type WaigongCategory = 'fist' | 'blade' | 'sword' | 'staff' | 'hidden-weapon';
 export type MartialArtCategory = 'movement' | 'internal' | WaigongCategory;
 export type GearSlot = 'weapon' | 'clothes' | 'accessory' | 'bracer' | 'shoes' | 'hat' | 'ring';
+export type GearRarity = 'common' | 'uncommon' | 'rare';
 
 export interface BaseAttributes {
     strength: number;
@@ -59,8 +60,14 @@ export interface GearItem {
     name: string;
     slot: GearSlot;
     description: string;
+    rarity: GearRarity;
     weaponCategory?: WaigongCategory;
     bonuses: Partial<GearBonuses>;
+}
+
+export interface LootTableEntry {
+    gearId: string;
+    weight: number;
 }
 
 export interface SynergyBonus {
@@ -98,6 +105,7 @@ export interface CharacterTemplate {
     knownMartialArtIds: KnownMartialArtIds;
     equippedGearIds: EquippedGearIds;
     knownGearIds: KnownGearIds;
+    lootTable?: LootTableEntry[];
 }
 
 export interface EquippedMartialArtIds {
@@ -220,6 +228,7 @@ export interface SceneData {
     title: string;
     description: string;
     threats: string[];
+    lootBias?: Record<GearRarity, number>;
 }
 
 export interface GameConfig {
@@ -242,6 +251,7 @@ export interface GameState {
     rivalId: string;
     heroLoadout: EquippedMartialArtIds;
     heroGearLoadout: EquippedGearIds;
+    heroKnownGearIds: KnownGearIds;
 }
 
 export interface EncounterState {
@@ -259,5 +269,6 @@ export interface TurnResult {
     enemyAction?: CombatActionResult;
     actionLog: CombatActionResult[];
     roundLog: string[];
+    rewards: string[];
     state: EncounterState;
 }

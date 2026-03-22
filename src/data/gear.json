@@ -4,6 +4,7 @@
     "name": "柳纹长剑",
     "slot": "weapon",
     "description": "命中 +3%，速度 +1，伤害 +1。",
+    "rarity": "common",
     "weaponCategory": "sword",
     "bonuses": {
       "accuracy": 0.03,
@@ -16,6 +17,7 @@
     "name": "惊涛铁拳套",
     "slot": "weapon",
     "description": "臂力 +2，伤害 +2。",
+    "rarity": "uncommon",
     "weaponCategory": "fist",
     "bonuses": {
       "strength": 2,
@@ -27,6 +29,7 @@
     "name": "青锋单刀",
     "slot": "weapon",
     "description": "伤害 +2，防御 +1。",
+    "rarity": "common",
     "weaponCategory": "blade",
     "bonuses": {
       "damage": 2,
@@ -38,6 +41,7 @@
     "name": "江纹长棍",
     "slot": "weapon",
     "description": "命中 +2%，防御 +1，速度 +1。",
+    "rarity": "common",
     "weaponCategory": "staff",
     "bonuses": {
       "accuracy": 0.02,
@@ -50,6 +54,7 @@
     "name": "燕尾针囊",
     "slot": "weapon",
     "description": "命中 +4%，速度 +1。",
+    "rarity": "uncommon",
     "weaponCategory": "hidden-weapon",
     "bonuses": {
       "accuracy": 0.04,
@@ -61,6 +66,7 @@
     "name": "青竹护衫",
     "slot": "clothes",
     "description": "根骨 +1，闪避 +3%，防御 +1。",
+    "rarity": "common",
     "bonuses": {
       "constitution": 1,
       "evasion": 0.03,
@@ -72,6 +78,7 @@
     "name": "铁鳞短甲",
     "slot": "clothes",
     "description": "根骨 +2，防御 +2。",
+    "rarity": "uncommon",
     "bonuses": {
       "constitution": 2,
       "guard": 2
@@ -82,6 +89,7 @@
     "name": "夜行披风",
     "slot": "clothes",
     "description": "身法 +1，速度 +1，闪避 +4%。",
+    "rarity": "uncommon",
     "bonuses": {
       "agility": 1,
       "speed": 1,
@@ -93,6 +101,7 @@
     "name": "温玉佩",
     "slot": "accessory",
     "description": "回气 +1，悟性 +1。",
+    "rarity": "common",
     "bonuses": {
       "qiRecovery": 1,
       "insight": 1
@@ -103,6 +112,7 @@
     "name": "逐影符",
     "slot": "accessory",
     "description": "速度 +1，闪避 +3%，身法 +1。",
+    "rarity": "uncommon",
     "bonuses": {
       "speed": 1,
       "evasion": 0.03,
@@ -114,6 +124,7 @@
     "name": "镇心玉锁",
     "slot": "accessory",
     "description": "根骨 +1，回气 +1，防御 +1。",
+    "rarity": "rare",
     "bonuses": {
       "constitution": 1,
       "qiRecovery": 1,
@@ -125,6 +136,7 @@
     "name": "铁纹护腕",
     "slot": "bracer",
     "description": "臂力 +1，防御 +1。",
+    "rarity": "common",
     "bonuses": {
       "strength": 1,
       "guard": 1
@@ -135,6 +147,7 @@
     "name": "软丝护腕",
     "slot": "bracer",
     "description": "命中 +2%，闪避 +2%。",
+    "rarity": "common",
     "bonuses": {
       "accuracy": 0.02,
       "evasion": 0.02
@@ -145,6 +158,7 @@
     "name": "机簧袖护",
     "slot": "bracer",
     "description": "命中 +3%，伤害 +1。",
+    "rarity": "uncommon",
     "bonuses": {
       "accuracy": 0.03,
       "damage": 1
@@ -155,6 +169,7 @@
     "name": "芦影快靴",
     "slot": "shoes",
     "description": "速度 +1，闪避 +2%。",
+    "rarity": "common",
     "bonuses": {
       "speed": 1,
       "evasion": 0.02
@@ -165,6 +180,7 @@
     "name": "镇岳重靴",
     "slot": "shoes",
     "description": "根骨 +1，防御 +1。",
+    "rarity": "common",
     "bonuses": {
       "constitution": 1,
       "guard": 1
@@ -175,6 +191,7 @@
     "name": "飞羽履",
     "slot": "shoes",
     "description": "身法 +1，速度 +1。",
+    "rarity": "uncommon",
     "bonuses": {
       "agility": 1,
       "speed": 1
@@ -185,6 +202,7 @@
     "name": "青篾斗笠",
     "slot": "hat",
     "description": "闪避 +2%，防御 +1。",
+    "rarity": "common",
     "bonuses": {
       "evasion": 0.02,
       "guard": 1
@@ -195,6 +213,7 @@
     "name": "行云抹额",
     "slot": "hat",
     "description": "命中 +2%，悟性 +1。",
+    "rarity": "common",
     "bonuses": {
       "accuracy": 0.02,
       "insight": 1
@@ -205,6 +224,7 @@
     "name": "夜隐风帽",
     "slot": "hat",
     "description": "闪避 +3%，速度 +1。",
+    "rarity": "uncommon",
     "bonuses": {
       "evasion": 0.03,
       "speed": 1
@@ -215,6 +235,7 @@
     "name": "鹰目环",
     "slot": "ring",
     "description": "命中 +4%，伤害 +1。",
+    "rarity": "uncommon",
     "bonuses": {
       "accuracy": 0.04,
       "damage": 1
@@ -225,6 +246,7 @@
     "name": "流玉戒",
     "slot": "ring",
     "description": "回气 +1，悟性 +1。",
+    "rarity": "common",
     "bonuses": {
       "qiRecovery": 1,
       "insight": 1
@@ -235,6 +257,7 @@
     "name": "铁骨戒",
     "slot": "ring",
     "description": "臂力 +1，防御 +1。",
+    "rarity": "common",
     "bonuses": {
       "strength": 1,
       "guard": 1

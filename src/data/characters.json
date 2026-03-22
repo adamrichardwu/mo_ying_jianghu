@@ -67,8 +67,7 @@
         "willow-leaf-sword",
         "storm-iron-gauntlet",
         "green-edge-saber",
-        "river-pattern-staff",
-        "swallowtail-needle-case"
+        "river-pattern-staff"
       ],
       "clothes": [
         "bamboo-guard-robe",
@@ -100,7 +99,8 @@
         "river-jade-ring",
         "iron-bone-ring"
       ]
-    }
+    },
+    "lootTable": []
   },
   {
     "id": "bandit-blackwind",
@@ -172,6 +172,36 @@
       "ring": [
         "hawk-eye-ring"
       ]
-    }
+    },
+    "lootTable": [
+      {
+        "gearId": "swallowtail-needle-case",
+        "weight": 6
+      },
+      {
+        "gearId": "hidden-arrow-bracer",
+        "weight": 4
+      },
+      {
+        "gearId": "black-veil-hood",
+        "weight": 3
+      },
+      {
+        "gearId": "feathertrace-boots",
+        "weight": 3
+      },
+      {
+        "gearId": "swift-shadow-charm",
+        "weight": 2
+      },
+      {
+        "gearId": "hawk-eye-ring",
+        "weight": 2
+      },
+      {
+        "gearId": "night-silk-cloak",
+        "weight": 2
+      }
+    ]
   }
 ]

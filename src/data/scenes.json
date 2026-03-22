@@ -7,7 +7,12 @@
       "流寇",
       "伏击",
       "江湖传闻"
-    ]
+    ],
+    "lootBias": {
+      "common": 0,
+      "uncommon": 2,
+      "rare": -1
+    }
   },
   {
     "id": "teahouse",
@@ -17,6 +22,11 @@
       "传闻",
       "悬赏",
       "暗探"
-    ]
+    ],
+    "lootBias": {
+      "common": -1,
+      "uncommon": 1,
+      "rare": 2
+    }
   }
 ]

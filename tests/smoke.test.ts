@@ -18,6 +18,16 @@ describe('data', () => {
     expect(heroProfile.equipment.waigong.category).toBe('sword');
     expect(banditProfile.equipment.waigong.category).toBe('hidden-weapon');
   });
+
+  it('loads loot rarity and scene bias data', () => {
+    const swallowtailNeedleCase = content.gear.find((item) => item.id === 'swallowtail-needle-case');
+    const ancientRoad = content.scenes.find((scene) => scene.id === 'ancient-road');
+    const rivalTemplate = content.characters.find((character) => character.id === content.config.rivalId);
+
+    expect(swallowtailNeedleCase?.rarity).toBe('uncommon');
+    expect(ancientRoad?.lootBias?.uncommon).toBe(2);
+    expect(rivalTemplate?.lootTable?.some((entry) => entry.gearId === 'swallowtail-needle-case')).toBe(true);
+  });
 });
 
 describe('combat', () => {
@@ -159,6 +169,7 @@ describe('game', () => {
     expect(game.getHeroBasicTechniques().map((technique) => technique.name)).toContain('江风点锋');
     expect(game.getHeroReferenceProfile().equipment.waigong.name).toBe('清霜江月剑');
     expect(game.getHeroGearOptions().weapon.map((item) => item.name)).toContain('惊涛铁拳套');
+    expect(game.getHeroGearOptions().weapon.map((item) => item.name)).not.toContain('燕尾针囊');
     expect(game.getHeroGearOptions().ring.map((item) => item.name)).toContain('鹰目环');
     expect(game.getHeroLoadoutOptions().waigong.blade.map((martialArt) => martialArt.name)).toContain('断浪沉锋刀');
   });
@@ -198,5 +209,19 @@ describe('game', () => {
 
     const baseProfile = game.getHeroReferenceProfile();
     expect(baseProfile.equipment.waigong.name).toBe('基础拳脚');
+  });
+
+  it('adds dropped gear into inventory after victory', () => {
+    const game = new Game(() => 0);
+    let state = game.beginEncounter();
+    let lastTurn: ReturnType<Game['takeTurn']> | undefined;
+
+    while (!state.isFinished) {
+      lastTurn = game.takeTurn('martial');
+      state = lastTurn.state;
+    }
+
+    expect(lastTurn?.rewards).toContain('获得装备：燕尾针囊（武器 / 良品）');
+    expect(game.getHeroGearInventory().weapon.map((item) => item.name)).toContain('燕尾针囊');
   });
 });

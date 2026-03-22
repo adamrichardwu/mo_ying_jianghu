@@ -10,6 +10,11 @@ import type {
     EncounterState,
     GameContent,
     GameState,
+    GearItem,
+    GearRarity,
+    GearSlot,
+    KnownGearIds,
+    LootTableEntry,
     PlayerAction,
     SceneData,
     Technique,
@@ -32,8 +37,11 @@ export class Game {
     private combat: Combat;
     private scene: SceneData;
     private round: number;
+    private pendingRewards: string[];
+    private readonly random: () => number;
 
-    constructor() {
+    constructor(random: () => number = Math.random) {
+        this.random = random;
         this.content = loadGameContent();
         this.sceneManager = new SceneManager(this.content.scenes, this.content.config.initialSceneId);
         const heroTemplate = this.content.characters.find((entry) => entry.id === this.content.config.heroId);
@@ -48,17 +56,19 @@ export class Game {
             rivalId: this.content.config.rivalId,
             heroLoadout: { ...heroTemplate.equippedMartialArtIds },
             heroGearLoadout: { ...heroTemplate.equippedGearIds },
+            heroKnownGearIds: { ...heroTemplate.knownGearIds },
         };
         this.scene = this.sceneManager.loadScene(this.state.currentSceneId);
-        this.hero = new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout));
+        this.hero = new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds));
         this.rival = new Character(buildCharacterProfile(this.content, this.state.rivalId));
         this.combat = new Combat();
         this.round = 1;
+        this.pendingRewards = [];
     }
 
     start(): StartSummary {
         const scene = this.sceneManager.loadScene(this.state.currentSceneId);
-        const hero = new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout));
+        const hero = new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds));
         const rival = new Character(buildCharacterProfile(this.content, this.state.rivalId));
         const combat = new Combat();
         const battle = combat.runDuel(hero, rival);
@@ -129,6 +139,10 @@ export class Game {
             this.round += 1;
         }
 
+        if (this.rival.isDefeated()) {
+            this.pendingRewards = this.resolveEncounterRewards();
+        }
+
         const state = this.getEncounterState();
 
         return {
@@ -137,28 +151,33 @@ export class Game {
             enemyAction,
             actionLog,
             roundLog,
+            rewards: [...this.pendingRewards],
             state,
         };
     }
 
     getHeroReferenceProfile(): ReturnType<Character['snapshot']> {
-        return new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout)).snapshot();
+        return new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds)).snapshot();
     }
 
     getHeroTechniques(): Technique[] {
-        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout).equipment.waigong.techniques ?? [];
+        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds).equipment.waigong.techniques ?? [];
     }
 
     getHeroBasicTechniques(): Technique[] {
-        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout).equipment.waigong.basicTechniques ?? [];
+        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds).equipment.waigong.basicTechniques ?? [];
     }
 
     getHeroLoadoutOptions(): ReturnType<Character['snapshot']>['knownMartialArts'] {
-        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout).knownMartialArts;
+        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds).knownMartialArts;
     }
 
     getHeroGearOptions(): ReturnType<Character['snapshot']>['knownGear'] {
-        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout).knownGear;
+        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds).knownGear;
+    }
+
+    getHeroGearInventory(): ReturnType<Character['snapshot']>['knownGear'] {
+        return this.getHeroGearOptions();
     }
 
     equipHeroMartialArt(slot: 'qinggong' | 'neigong', martialArtId: string): void {
@@ -222,10 +241,57 @@ export class Game {
 
     private resetEncounter(): void {
         this.scene = this.sceneManager.loadScene(this.state.currentSceneId);
-        this.hero = new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout));
+        this.hero = new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds));
         this.rival = new Character(buildCharacterProfile(this.content, this.state.rivalId));
         this.combat = new Combat();
         this.round = 1;
+        this.pendingRewards = [];
+    }
+
+    private resolveEncounterRewards(): string[] {
+        const rivalTemplate = this.content.characters.find((entry) => entry.id === this.state.rivalId);
+
+        if (!rivalTemplate?.lootTable || rivalTemplate.lootTable.length === 0) {
+            return ['本次战斗未获得新装备。'];
+        }
+
+        const weightedCandidates = rivalTemplate.lootTable
+            .map((entry) => this.resolveLootCandidate(entry))
+            .filter((entry): entry is { entry: LootTableEntry; item: GearItem; weight: number } => entry !== null)
+            .filter(({ item }) => !this.state.heroKnownGearIds[item.slot].includes(item.id));
+
+        if (weightedCandidates.length === 0) {
+            return ['本次战斗未获得新装备。'];
+        }
+
+        const selected = chooseWeighted(weightedCandidates, this.random);
+        this.addHeroGearToInventory(selected.item.slot, selected.item);
+
+        return [`获得装备：${selected.item.name}（${slotLabel(selected.item.slot)} / ${rarityLabel(selected.item.rarity)}）`];
+    }
+
+    private resolveLootCandidate(entry: LootTableEntry): { entry: LootTableEntry; item: GearItem; weight: number } | null {
+        const item = this.content.gear.find((gear) => gear.id === entry.gearId);
+
+        if (!item) {
+            return null;
+        }
+
+        const bias = this.scene.lootBias?.[item.rarity] ?? 0;
+        const weight = Math.max(1, entry.weight + bias);
+
+        return {
+            entry,
+            item,
+            weight,
+        };
+    }
+
+    private addHeroGearToInventory(slot: GearSlot, item: GearItem): void {
+        this.state.heroKnownGearIds = {
+            ...this.state.heroKnownGearIds,
+            [slot]: [...this.state.heroKnownGearIds[slot], item.id],
+        } as KnownGearIds;
     }
 
     private resolvePlayerAction(action: PlayerAction, techniqueId?: string): CombatActionResult {
@@ -295,5 +361,49 @@ export class Game {
         }
 
         return template;
+    }
+}
+
+function chooseWeighted<T extends { weight: number }>(entries: T[], random: () => number): T {
+    const total = entries.reduce((sum, entry) => sum + entry.weight, 0);
+    let cursor = random() * total;
+
+    for (const entry of entries) {
+        cursor -= entry.weight;
+        if (cursor < 0) {
+            return entry;
+        }
+    }
+
+    return entries[entries.length - 1];
+}
+
+function slotLabel(slot: GearSlot): string {
+    switch (slot) {
+        case 'weapon':
+            return '武器';
+        case 'clothes':
+            return '衣服';
+        case 'accessory':
+            return '饰品';
+        case 'bracer':
+            return '护腕';
+        case 'shoes':
+            return '鞋子';
+        case 'hat':
+            return '帽子';
+        case 'ring':
+            return '戒指';
+    }
+}
+
+function rarityLabel(rarity: GearRarity): string {
+    switch (rarity) {
+        case 'common':
+            return '凡品';
+        case 'uncommon':
+            return '良品';
+        case 'rare':
+            return '珍奇';
     }
 }

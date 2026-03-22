@@ -8,9 +8,10 @@ const mainMenuOptions = [
 	{ code: '1', label: '开始江湖遭遇' },
 	{ code: '2', label: '查看角色面板' },
 	{ code: '3', label: '查看武学目录' },
-	{ code: '4', label: '更换装备' },
-	{ code: '5', label: '查看操作说明' },
-	{ code: '6', label: '退出' },
+	{ code: '4', label: '查看装备背包' },
+	{ code: '5', label: '更换装备' },
+	{ code: '6', label: '查看操作说明' },
+	{ code: '7', label: '退出' },
 ];
 
 function formatStatuses(statuses: StatusEffect[]): string {
@@ -50,6 +51,9 @@ function printTurnResult(result: TurnResult): void {
 		printDivider();
 		if (result.state.winner === result.state.hero.name) {
 			console.log(`胜负已分，${result.state.winner}赢下了这场遭遇战。`);
+			result.rewards.forEach((reward) => {
+				console.log(`战利品：${reward}`);
+			});
 		} else {
 			console.log(`你已落败，胜者是${result.state.winner}。`);
 		}
@@ -147,6 +151,19 @@ function printMartialArts(game: Game): void {
 	});
 }
 
+function printGearInventory(game: Game): void {
+	const inventory = game.getHeroGearInventory();
+	printDivider();
+	console.log('装备背包');
+	console.log(`武器：${inventory.weapon.map((item) => item.name).join('、') || '无'}`);
+	console.log(`衣服：${inventory.clothes.map((item) => item.name).join('、') || '无'}`);
+	console.log(`饰品：${inventory.accessory.map((item) => item.name).join('、') || '无'}`);
+	console.log(`护腕：${inventory.bracer.map((item) => item.name).join('、') || '无'}`);
+	console.log(`鞋子：${inventory.shoes.map((item) => item.name).join('、') || '无'}`);
+	console.log(`帽子：${inventory.hat.map((item) => item.name).join('、') || '无'}`);
+	console.log(`戒指：${inventory.ring.map((item) => item.name).join('、') || '无'}`);
+}
+
 function printHelp(): void {
 	printDivider();
 	console.log('操作说明');
@@ -157,9 +174,10 @@ function printHelp(): void {
 	console.log('5. 普通攻击会从当前外功的基础招式池中随机施展一招。');
 	console.log('6. 破绽会提高目标承受的下一次伤害，流血会在回合结算时扣血，凝神会强化下一次进攻。');
 	console.log('7. 装备共有 7 个槽位：武器、衣服、饰品、护腕、鞋子、帽子、戒指。');
-	console.log('8. 在主菜单中可以分别切换轻功、内功、各流派外功，以及 7 个装备槽位。');
-	console.log('9. 每回合按速度决定先后手，速度更高的一方先行动。');
-	console.log('10. 在战斗界面输入 q 可退出当前遭遇并返回主菜单。');
+	console.log('8. 战斗胜利后会掉落敌方装备，并自动进入装备背包。');
+	console.log('9. 在主菜单中可以分别查看背包，并切换轻功、内功、各流派外功，以及 7 个装备槽位。');
+	console.log('10. 每回合按速度决定先后手，速度更高的一方先行动。');
+	console.log('11. 在战斗界面输入 q 可退出当前遭遇并返回主菜单。');
 }
 
 async function chooseTechnique(rl: ReturnType<typeof createInterface>, game: Game): Promise<Technique | undefined> {
@@ -500,16 +518,21 @@ async function main(): Promise<void> {
 			}
 
 			if (normalized === '4') {
-				await runEquipmentMenu(rl, game);
+				printGearInventory(game);
 				continue;
 			}
 
 			if (normalized === '5') {
+				await runEquipmentMenu(rl, game);
+				continue;
+			}
+
+			if (normalized === '6') {
 				printHelp();
 				continue;
 			}
 
-			if (normalized === '6' || normalized === 'q') {
+			if (normalized === '7' || normalized === 'q') {
 				console.log('江湖路远，后会有期。');
 				return;
 			}
