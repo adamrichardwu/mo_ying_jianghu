@@ -2,7 +2,7 @@ import { createInterface } from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 
 import { Game } from './game';
-import type { EncounterState, MartialArt, PlayerAction, StatusEffect, TurnResult } from './types';
+import type { EncounterState, PlayerAction, StatusEffect, Technique, TurnResult } from './types';
 
 const mainMenuOptions = [
 	{ code: '1', label: '开始江湖遭遇' },
@@ -64,8 +64,8 @@ function parseAction(answer: string, actions: Array<{ code: string; action: Play
 
 function printTitle(): void {
 	printDivider();
-	console.log('墨影江湖：终端版 v1.1.0');
-	console.log('一段可在终端体验的最小武侠文字原型。');
+	console.log('墨影江湖：终端重构试作');
+	console.log('轻功定先后，内功为根基，外功主招式。');
 	printDivider();
 }
 
@@ -86,56 +86,65 @@ function printHeroPanel(game: Game): void {
 	console.log(`身法：${hero.attributes.agility}`);
 	console.log(`根骨：${hero.attributes.constitution}`);
 	console.log(`悟性：${hero.attributes.insight}`);
-	console.log(`已习武学：${hero.martialArts.map((martialArt) => martialArt.name).join('、')}`);
+	console.log(`轻功：${hero.equipment.qinggong.name} - ${hero.equipment.qinggong.description}`);
+	console.log(`内功：${hero.equipment.neigong.name} - ${hero.equipment.neigong.description}`);
+	console.log(`外功：${hero.equipment.waigong.name} - ${hero.equipment.waigong.description}`);
 }
 
-function describeMartialArt(martialArt: MartialArt): string {
-	const effects = martialArt.effects && martialArt.effects.length > 0
-		? `，效果：${martialArt.effects.map((effect) => `${effect.target === 'self' ? '自身' : '目标'}获得${effect.type}(${effect.potency}/${effect.duration}回合)`).join('；')}`
+function describeTechnique(technique: Technique): string {
+	const effects = technique.effects && technique.effects.length > 0
+		? `，效果：${technique.effects.map((effect) => `${effect.target === 'self' ? '自身' : '目标'}获得${translateStatusType(effect.type)}(${effect.potency}/${effect.duration}回合)`).join('；')}`
 		: '';
 
-	return `${martialArt.name} [${martialArt.type}] 威力 ${martialArt.power} / 消耗 ${martialArt.qiCost} / 命中 ${Math.round(martialArt.accuracy * 100)}%${effects}`;
+	return `${technique.name} 威力 ${technique.power} / 消耗 ${technique.qiCost} / 命中 ${Math.round(technique.accuracy * 100)}%${effects}`;
 }
 
 function printMartialArts(game: Game): void {
+	const hero = game.getHeroReferenceProfile();
 	printDivider();
-	console.log('武学目录');
-	game.getHeroMartialArts().forEach((martialArt, index) => {
-		console.log(`${index + 1}. ${describeMartialArt(martialArt)}`);
+	console.log('武学配置');
+	console.log(`轻功：${hero.equipment.qinggong.name}`);
+	console.log(`  被动：命中 +${Math.round((hero.equipment.qinggong.passiveBonuses?.accuracy ?? 0) * 100)}%，闪避 +${Math.round((hero.equipment.qinggong.passiveBonuses?.evasion ?? 0) * 100)}%，速度 +${hero.equipment.qinggong.passiveBonuses?.speed ?? 0}`);
+	console.log(`内功：${hero.equipment.neigong.name}`);
+	console.log(`  被动：回气 +${hero.equipment.neigong.passiveBonuses?.qiRecovery ?? 0}，防御 +${hero.equipment.neigong.passiveBonuses?.guard ?? 0}`);
+	console.log(`外功：${hero.equipment.waigong.name} [${translateCategory(hero.equipment.waigong.category)}]`);
+	console.log('绝招列表');
+	game.getHeroTechniques().forEach((technique, index) => {
+		console.log(`${index + 1}. ${describeTechnique(technique)}`);
 	});
 }
 
 function printHelp(): void {
 	printDivider();
 	console.log('操作说明');
-	console.log('1. 在主菜单里选择开始遭遇，进入一场回合制战斗。');
-	console.log('2. 战斗内可以普通攻击、施展武学、防御或调息。');
-	console.log('3. 施展武学时，如果有多门武学，会继续让你选择具体招式。');
-	console.log('4. 破绽会提高目标承受的下一次伤害，流血会在回合结算时扣血，凝神会强化下一次进攻。');
+	console.log('1. 角色固定装备 1 个轻功、1 个内功、1 个外功。');
+	console.log('2. 轻功决定先手、命中与闪避；内功决定回气、防御和外功流派加成；外功提供绝招。');
+	console.log('3. 破绽会提高目标承受的下一次伤害，流血会在回合结算时扣血，凝神会强化下一次进攻。');
+	console.log('4. 每回合按速度决定先后手，速度更高的一方先行动。');
 	console.log('5. 在战斗界面输入 q 可退出当前遭遇并返回主菜单。');
 }
 
-async function chooseMartialArt(rl: ReturnType<typeof createInterface>, game: Game): Promise<MartialArt | undefined> {
-	const martialArts = game.getHeroMartialArts();
+async function chooseTechnique(rl: ReturnType<typeof createInterface>, game: Game): Promise<Technique | undefined> {
+	const techniques = game.getHeroTechniques();
 	printDivider();
-	console.log('选择武学');
-	martialArts.forEach((martialArt, index) => {
-		console.log(`${index + 1}. ${describeMartialArt(martialArt)}`);
+	console.log('选择绝招');
+	techniques.forEach((technique, index) => {
+		console.log(`${index + 1}. ${describeTechnique(technique)}`);
 	});
 	console.log('q. 返回上一层');
 
-	const answer = await rl.question('武学编号：');
+	const answer = await rl.question('绝招编号：');
 	if (answer.trim().toLowerCase() === 'q') {
 		return undefined;
 	}
 
 	const index = Number(answer.trim()) - 1;
-	if (!Number.isInteger(index) || index < 0 || index >= martialArts.length) {
-		console.log('无效武学编号。');
+	if (!Number.isInteger(index) || index < 0 || index >= techniques.length) {
+		console.log('无效绝招编号。');
 		return undefined;
 	}
 
-	return martialArts[index];
+	return techniques[index];
 }
 
 async function runEncounter(rl: ReturnType<typeof createInterface>, game: Game): Promise<void> {
@@ -175,21 +184,47 @@ async function runEncounter(rl: ReturnType<typeof createInterface>, game: Game):
 			continue;
 		}
 
-		let martialArtId: string | undefined;
+		let techniqueId: string | undefined;
 		if (action === 'martial') {
-			const martialArt = await chooseMartialArt(rl, game);
-			if (!martialArt) {
+			const technique = await chooseTechnique(rl, game);
+			if (!technique) {
 				continue;
 			}
-			martialArtId = martialArt.id;
+			techniqueId = technique.id;
 		}
 
-		const result = game.takeTurn(action, martialArtId);
+		const result = game.takeTurn(action, techniqueId);
 		printTurnResult(result);
 		state = result.state;
 	}
 
 	await rl.question('按回车返回主菜单。');
+}
+
+function translateCategory(category: string): string {
+	switch (category) {
+		case 'sword':
+			return '剑';
+		case 'fist':
+			return '拳';
+		case 'hidden-weapon':
+			return '暗器';
+		default:
+			return category;
+	}
+}
+
+function translateStatusType(type: string): string {
+	switch (type) {
+		case 'bleed':
+			return '流血';
+		case 'exposed':
+			return '破绽';
+		case 'focus':
+			return '凝神';
+		default:
+			return type;
+	}
 }
 
 async function main(): Promise<void> {

@@ -1,4 +1,13 @@
-import type { CharacterProfile, CharacterState, MartialArt, StatusEffect, StatusEffectType } from '../types';
+import type {
+    CharacterProfile,
+    CharacterState,
+    MartialArt,
+    StatusEffect,
+    StatusEffectType,
+    SynergyBonus,
+    Technique,
+    WaigongCategory,
+} from '../types';
 
 export class Character {
     private readonly profile: CharacterProfile;
@@ -38,8 +47,20 @@ export class Character {
         return this.state.guard;
     }
 
-    get martialArts(): MartialArt[] {
-        return this.profile.martialArts;
+    get equipment(): CharacterProfile['equipment'] {
+        return this.profile.equipment;
+    }
+
+    get equippedQinggong(): MartialArt {
+        return this.profile.equipment.qinggong;
+    }
+
+    get equippedNeigong(): MartialArt {
+        return this.profile.equipment.neigong;
+    }
+
+    get equippedWaigong(): MartialArt {
+        return this.profile.equipment.waigong;
     }
 
     get statuses(): StatusEffect[] {
@@ -142,25 +163,69 @@ export class Character {
     }
 
     getMartialArtById(martialArtId: string): MartialArt | undefined {
-        return this.martialArts.find((martialArt) => martialArt.id === martialArtId);
+        return Object.values(this.profile.equipment).find((martialArt) => martialArt.id === martialArtId);
     }
 
-    chooseAvailableMartialArt(): MartialArt {
-        const usable = this.martialArts
-            .filter((martialArt) => martialArt.qiCost <= this.qi)
-            .sort((left, right) => right.power - left.power);
+    getTechniqueById(techniqueId: string): Technique | undefined {
+        return this.equippedWaigong.techniques?.find((technique) => technique.id === techniqueId);
+    }
+
+    getAvailableTechniques(): Technique[] {
+        return (this.equippedWaigong.techniques ?? []).filter((technique) => technique.qiCost <= this.qi);
+    }
+
+    chooseAvailableTechnique(): Technique {
+        const usable = this.getAvailableTechniques().sort((left, right) => right.power - left.power);
 
         if (usable.length > 0) {
             return usable[0];
         }
 
         return {
-            id: 'basic-guard',
-            name: '徒手招架',
-            type: 'waigong',
+            id: 'basic-strike',
+            name: '基础出手',
+            description: '当真气不足时使用的基础攻击。',
             power: Math.max(1, Math.floor(this.strength / 2)),
             qiCost: 0,
             accuracy: 0.85,
+        };
+    }
+
+    getSpeed(): number {
+        return this.agility + (this.equippedQinggong.passiveBonuses?.speed ?? 0);
+    }
+
+    getAccuracyBonus(category: WaigongCategory): number {
+        return (this.equippedQinggong.passiveBonuses?.accuracy ?? 0)
+            + this.getSynergyBonus(category).accuracy;
+    }
+
+    getEvasionBonus(): number {
+        return this.equippedQinggong.passiveBonuses?.evasion ?? 0;
+    }
+
+    getDamageBonus(category: WaigongCategory): number {
+        return (this.equippedNeigong.passiveBonuses?.damage ?? 0)
+            + this.getSynergyBonus(category).damage;
+    }
+
+    getQiRecoveryBonus(category: WaigongCategory): number {
+        return (this.equippedNeigong.passiveBonuses?.qiRecovery ?? 0)
+            + this.getSynergyBonus(category).qiRecovery;
+    }
+
+    getGuardBonus(category: WaigongCategory): number {
+        return (this.equippedNeigong.passiveBonuses?.guard ?? 0)
+            + this.getSynergyBonus(category).guard;
+    }
+
+    private getSynergyBonus(category: WaigongCategory): SynergyBonus {
+        return this.equippedNeigong.synergy?.find((entry) => entry.waigongCategories.includes(category)) ?? {
+            waigongCategories: [category],
+            accuracy: 0,
+            damage: 0,
+            qiRecovery: 0,
+            guard: 0,
         };
     }
 

@@ -1,5 +1,12 @@
 import { Character } from '../characters';
-import type { CombatActionResult, CombatSummary, MartialArt, MartialArtEffect, StatusEffect } from '../types';
+import type {
+    CombatActionResult,
+    CombatSummary,
+    MartialArtEffect,
+    StatusEffect,
+    Technique,
+    WaigongCategory,
+} from '../types';
 
 const STATUS_NAMES: Record<StatusEffect['type'], string> = {
     bleed: '流血',
@@ -16,49 +23,55 @@ export class Combat {
         return logs;
     }
 
-    public resolveAction(attacker: Character, defender: Character, martialArt?: MartialArt): CombatActionResult {
-        const selectedMartialArt = martialArt ?? attacker.chooseAvailableMartialArt();
-
-        if (selectedMartialArt.type === 'neigong') {
-            return this.resolveInternalArt(attacker, selectedMartialArt);
-        }
-
-        const hitChance = Math.min(
+    public resolveTechnique(attacker: Character, defender: Character, technique?: Technique): CombatActionResult {
+        const selectedTechnique = technique ?? attacker.chooseAvailableTechnique();
+        const category = attacker.equippedWaigong.category as WaigongCategory;
+        const hadFocus = attacker.hasStatus('focus');
+        const exposedBonus = defender.getStatusPotency('exposed');
+        const hitChance = clamp(
+            selectedTechnique.accuracy
+                + (attacker.getSpeed() - defender.getSpeed()) * 0.015
+                + attacker.getAccuracyBonus(category)
+                + this.getFocusAccuracyBonus(attacker)
+                - defender.getEvasionBonus(),
+            0.35,
             0.98,
-            selectedMartialArt.accuracy
-                + (attacker.agility - defender.agility) * 0.02
-                + this.getFocusAccuracyBonus(attacker),
         );
         const hit = hitChance >= 0.55;
 
-        attacker.spendQi(selectedMartialArt.qiCost);
+        attacker.spendQi(selectedTechnique.qiCost);
 
         const rawDamage = hit
             ? Math.max(
                 1,
-                selectedMartialArt.power
+                selectedTechnique.power
                     + attacker.strength
+                    + attacker.getDamageBonus(category)
                     + this.getFocusDamageBonus(attacker)
-                    + defender.getStatusPotency('exposed')
-                    - Math.floor(defender.agility / 2),
+                    + exposedBonus
+                    - Math.floor(defender.constitution / 3),
             )
             : 0;
 
         const blockedDamage = hit ? defender.consumeGuard(rawDamage) : 0;
         const damage = Math.max(0, rawDamage - blockedDamage);
-        const appliedStatuses = hit ? this.applyMartialArtEffects(attacker, defender, selectedMartialArt.effects ?? []) : [];
+        const appliedStatuses = hit ? this.applyMartialArtEffects(attacker, defender, selectedTechnique.effects ?? []) : [];
 
         if (damage > 0) {
             defender.takeDamage(damage);
-            defender.consumeStatus('exposed');
+            if (exposedBonus > 0) {
+                defender.consumeStatus('exposed');
+            }
         }
 
-        attacker.consumeStatus('focus');
+        if (hadFocus) {
+            attacker.consumeStatus('focus');
+        }
 
         const suffix = appliedStatuses.length > 0 ? ` ${appliedStatuses.join(' ')}` : '';
         const summary = hit
-            ? `${attacker.name}施展${selectedMartialArt.name}，对${defender.name}造成${damage}点伤害。${suffix}`.trim()
-            : `${attacker.name}施展${selectedMartialArt.name}，但被${defender.name}避开。`;
+            ? `${attacker.name}以${attacker.equippedWaigong.name}使出${selectedTechnique.name}，对${defender.name}造成${damage}点伤害。${suffix}`.trim()
+            : `${attacker.name}使出${selectedTechnique.name}，但被${defender.name}避开。`;
 
         this.battleLog.push(summary);
 
@@ -66,7 +79,8 @@ export class Combat {
             actionType: 'martial',
             attacker: attacker.name,
             defender: defender.name,
-            martialArt: selectedMartialArt.name,
+            martialArt: attacker.equippedWaigong.name,
+            technique: selectedTechnique.name,
             hit,
             damage,
             defenderRemainingHealth: defender.health,
@@ -78,15 +92,27 @@ export class Combat {
     }
 
     public resolveBasicAttack(attacker: Character, defender: Character): CombatActionResult {
-        const hitChance = Math.min(0.95, 0.8 + (attacker.agility - defender.agility) * 0.02 + this.getFocusAccuracyBonus(attacker));
+        const category = attacker.equippedWaigong.category as WaigongCategory;
+        const hadFocus = attacker.hasStatus('focus');
+        const exposedBonus = defender.getStatusPotency('exposed');
+        const hitChance = clamp(
+            0.8
+                + (attacker.getSpeed() - defender.getSpeed()) * 0.015
+                + attacker.getAccuracyBonus(category)
+                + this.getFocusAccuracyBonus(attacker)
+                - defender.getEvasionBonus(),
+            0.35,
+            0.95,
+        );
         const hit = hitChance >= 0.55;
         const rawDamage = hit
             ? Math.max(
                 1,
                 attacker.strength
                     + Math.floor(attacker.agility / 2)
+                    + attacker.getDamageBonus(category)
                     + this.getFocusDamageBonus(attacker)
-                    + defender.getStatusPotency('exposed')
+                    + exposedBonus
                     - Math.floor(defender.constitution / 3),
             )
             : 0;
@@ -95,10 +121,14 @@ export class Combat {
 
         if (damage > 0) {
             defender.takeDamage(damage);
-            defender.consumeStatus('exposed');
+            if (exposedBonus > 0) {
+                defender.consumeStatus('exposed');
+            }
         }
 
-        attacker.consumeStatus('focus');
+        if (hadFocus) {
+            attacker.consumeStatus('focus');
+        }
 
         const summary = hit
             ? `${attacker.name}发动普通攻击，对${defender.name}造成${damage}点伤害。`
@@ -121,7 +151,8 @@ export class Combat {
     }
 
     public resolveDefend(actor: Character): CombatActionResult {
-        const guardGained = Math.max(2, Math.floor(actor.constitution / 2) + Math.floor(actor.insight / 2));
+        const category = actor.equippedWaigong.category as WaigongCategory;
+        const guardGained = Math.max(2, Math.floor(actor.constitution / 2) + Math.floor(actor.insight / 2) + actor.getGuardBonus(category));
         actor.addGuard(guardGained);
 
         const summary = `${actor.name}稳住架势，获得${guardGained}点防御。`;
@@ -143,7 +174,8 @@ export class Combat {
     }
 
     public resolveMeditate(actor: Character): CombatActionResult {
-        const qiRecovered = Math.max(2, Math.floor(actor.insight / 2) + Math.floor(actor.constitution / 3));
+        const category = actor.equippedWaigong.category as WaigongCategory;
+        const qiRecovered = Math.max(2, Math.floor(actor.insight / 2) + Math.floor(actor.constitution / 3) + actor.getQiRecoveryBonus(category));
         actor.recoverQi(qiRecovered);
 
         const summary = `${actor.name}调息回气，恢复${qiRecovered}点真气。`;
@@ -160,37 +192,6 @@ export class Combat {
             attackerRemainingQi: actor.qi,
             defenderGuard: actor.guard,
             qiRecovered,
-            summary,
-        };
-    }
-
-    private resolveInternalArt(actor: Character, martialArt: MartialArt): CombatActionResult {
-        actor.spendQi(martialArt.qiCost);
-        const qiRecovered = Math.max(3, Math.floor(martialArt.power / 2) + Math.floor(actor.insight / 2));
-        const guardGained = Math.max(2, Math.floor(martialArt.power / 3) + Math.floor(actor.constitution / 3));
-
-        actor.recoverQi(qiRecovered);
-        actor.addGuard(guardGained);
-
-        const appliedStatuses = this.applyMartialArtEffects(actor, actor, martialArt.effects ?? []);
-        const suffix = appliedStatuses.length > 0 ? ` ${appliedStatuses.join(' ')}` : '';
-        const summary = `${actor.name}运转${martialArt.name}，恢复${qiRecovered}点真气并获得${guardGained}点防御。${suffix}`.trim();
-
-        this.battleLog.push(summary);
-
-        return {
-            actionType: 'martial',
-            attacker: actor.name,
-            defender: actor.name,
-            martialArt: martialArt.name,
-            hit: true,
-            damage: 0,
-            defenderRemainingHealth: actor.health,
-            attackerRemainingQi: actor.qi,
-            defenderGuard: actor.guard,
-            qiRecovered,
-            guardGained,
-            appliedStatuses,
             summary,
         };
     }
@@ -228,29 +229,26 @@ export class Combat {
 
     public runDuel(first: Character, second: Character, maxRounds = 6): CombatSummary {
         this.battleLog.length = 0;
-
-        let attacker = first.agility >= second.agility ? first : second;
-        let defender = attacker === first ? second : first;
         let rounds = 0;
 
-        while (!attacker.isDefeated() && !defender.isDefeated() && rounds < maxRounds) {
+        while (!first.isDefeated() && !second.isDefeated() && rounds < maxRounds) {
             rounds += 1;
-            this.resolveAction(attacker, defender);
-            if (defender.isDefeated()) {
-                break;
+            const firstActor = first.getSpeed() >= second.getSpeed() ? first : second;
+            const secondActor = firstActor === first ? second : first;
+
+            this.resolveTechnique(firstActor, secondActor);
+            if (!secondActor.isDefeated()) {
+                this.resolveTechnique(secondActor, firstActor);
             }
 
-            this.resolveAction(defender, attacker);
-            if (attacker.isDefeated()) {
-                break;
+            if (!first.isDefeated() && !second.isDefeated()) {
+                this.resolveRoundEffects(first);
+                this.resolveRoundEffects(second);
             }
-
-            this.resolveRoundEffects(attacker);
-            this.resolveRoundEffects(defender);
         }
 
-        const winner = attacker.isDefeated() ? defender : attacker;
-        const loser = winner === attacker ? defender : attacker;
+        const winner = first.isDefeated() ? second : first;
+        const loser = winner === first ? second : first;
 
         return {
             winner: winner.name,
@@ -259,4 +257,8 @@ export class Combat {
             log: [...this.battleLog],
         };
     }
+}
+
+function clamp(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, value));
 }

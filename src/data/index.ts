@@ -3,7 +3,15 @@ import configData from './game-config.json';
 import martialArtsData from './martial-arts.json';
 import scenesData from './scenes.json';
 
-import type { CharacterProfile, CharacterTemplate, GameConfig, GameContent, MartialArt, SceneData } from '../types';
+import type {
+    CharacterProfile,
+    CharacterTemplate,
+    EquippedMartialArts,
+    GameConfig,
+    GameContent,
+    MartialArt,
+    SceneData,
+} from '../types';
 
 export function loadGameContent(): GameContent {
     return {
@@ -21,21 +29,31 @@ export function buildCharacterProfile(content: GameContent, characterId: string)
         throw new Error(`Character not found: ${characterId}`);
     }
 
-    const martialArts = template.martialArtIds.map((martialArtId) => {
-        const martialArt = content.martialArts.find((entry) => entry.id === martialArtId);
-
-        if (!martialArt) {
-            throw new Error(`Martial art not found: ${martialArtId}`);
-        }
-
-        return martialArt;
-    });
+    const equipment = resolveEquipment(content.martialArts, template);
 
     return {
         name: template.name,
         maxHealth: template.maxHealth,
         maxQi: template.maxQi,
         attributes: template.attributes,
-        martialArts,
+        equipment,
     };
+}
+
+function resolveEquipment(martialArts: MartialArt[], template: CharacterTemplate): EquippedMartialArts {
+    return {
+        qinggong: findMartialArt(martialArts, template.equippedMartialArtIds.qinggong),
+        neigong: findMartialArt(martialArts, template.equippedMartialArtIds.neigong),
+        waigong: findMartialArt(martialArts, template.equippedMartialArtIds.waigong),
+    };
+}
+
+function findMartialArt(martialArts: MartialArt[], martialArtId: string): MartialArt {
+    const martialArt = martialArts.find((entry) => entry.id === martialArtId);
+
+    if (!martialArt) {
+        throw new Error(`Martial art not found: ${martialArtId}`);
+    }
+
+    return martialArt;
 }

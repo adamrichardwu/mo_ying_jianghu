@@ -10,10 +10,11 @@
       "constitution": 9,
       "insight": 7
     },
-    "martialArtIds": [
-      "breaking-shadow-fist",
-      "returning-breath-art"
-    ]
+    "equippedMartialArtIds": {
+      "qinggong": "cloud-trace-step",
+      "neigong": "tide-surge-heart",
+      "waigong": "frost-river-sword"
+    }
   },
   {
     "id": "bandit-blackwind",
@@ -26,8 +27,10 @@
       "constitution": 6,
       "insight": 4
     },
-    "martialArtIds": [
-      "chaos-rock-blade"
-    ]
+    "equippedMartialArtIds": {
+      "qinggong": "swallow-feather-shift",
+      "neigong": "iron-wall-breath",
+      "waigong": "falling-star-needles"
+    }
   }
 ]

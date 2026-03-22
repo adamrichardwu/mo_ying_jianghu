@@ -1,4 +1,6 @@
 export type MartialArtType = 'qinggong' | 'neigong' | 'waigong';
+export type WaigongCategory = 'sword' | 'fist' | 'hidden-weapon';
+export type MartialArtCategory = 'movement' | 'internal' | WaigongCategory;
 
 export interface BaseAttributes {
     strength: number;
@@ -11,10 +13,38 @@ export interface MartialArt {
     id: string;
     name: string;
     type: MartialArtType;
+    category: MartialArtCategory;
+    description: string;
+    passiveBonuses?: Partial<PassiveBonuses>;
+    synergy?: SynergyBonus[];
+    techniques?: Technique[];
+}
+
+export interface Technique {
+    id: string;
+    name: string;
+    description: string;
     power: number;
     qiCost: number;
     accuracy: number;
     effects?: MartialArtEffect[];
+}
+
+export interface PassiveBonuses {
+    accuracy: number;
+    evasion: number;
+    speed: number;
+    qiRecovery: number;
+    guard: number;
+    damage: number;
+}
+
+export interface SynergyBonus {
+    waigongCategories: WaigongCategory[];
+    accuracy: number;
+    damage: number;
+    qiRecovery: number;
+    guard: number;
 }
 
 export type StatusEffectType = 'bleed' | 'exposed' | 'focus';
@@ -40,7 +70,19 @@ export interface CharacterTemplate {
     maxHealth: number;
     maxQi: number;
     attributes: BaseAttributes;
-    martialArtIds: string[];
+    equippedMartialArtIds: EquippedMartialArtIds;
+}
+
+export interface EquippedMartialArtIds {
+    qinggong: string;
+    neigong: string;
+    waigong: string;
+}
+
+export interface EquippedMartialArts {
+    qinggong: MartialArt;
+    neigong: MartialArt;
+    waigong: MartialArt;
 }
 
 export interface CharacterProfile {
@@ -48,7 +90,7 @@ export interface CharacterProfile {
     maxHealth: number;
     maxQi: number;
     attributes: BaseAttributes;
-    martialArts: MartialArt[];
+    equipment: EquippedMartialArts;
 }
 
 export interface CharacterState {
@@ -66,6 +108,7 @@ export interface CombatActionResult {
     attacker: string;
     defender: string;
     martialArt: string;
+    technique?: string;
     hit: boolean;
     damage: number;
     defenderRemainingHealth: number;
@@ -123,6 +166,7 @@ export interface TurnResult {
     round: number;
     playerAction: CombatActionResult;
     enemyAction?: CombatActionResult;
+    actionLog: CombatActionResult[];
     roundLog: string[];
     state: EncounterState;
 }

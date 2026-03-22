@@ -1,49 +1,200 @@
 [
   {
-    "id": "breaking-shadow-fist",
-    "name": "破影拳",
-    "type": "waigong",
-    "power": 14,
-    "qiCost": 4,
-    "accuracy": 0.9,
-    "effects": [
-      {
-        "type": "exposed",
-        "target": "target",
-        "duration": 1,
-        "potency": 4
-      }
-    ]
+    "id": "cloud-trace-step",
+    "name": "踏云追影步",
+    "type": "qinggong",
+    "category": "movement",
+    "description": "取意于经典武侠中飘逸灵动的身法体系，重在先手、命中与转位。",
+    "passiveBonuses": {
+      "accuracy": 0.08,
+      "evasion": 0.06,
+      "speed": 3
+    }
   },
   {
-    "id": "returning-breath-art",
-    "name": "归息诀",
+    "id": "swallow-feather-shift",
+    "name": "燕羽穿林身",
+    "type": "qinggong",
+    "category": "movement",
+    "description": "偏重闪转腾挪与暗器回避，适合游斗与消耗。",
+    "passiveBonuses": {
+      "accuracy": 0.04,
+      "evasion": 0.1,
+      "speed": 2
+    }
+  },
+  {
+    "id": "tide-surge-heart",
+    "name": "潮生归元诀",
     "type": "neigong",
-    "power": 8,
-    "qiCost": 2,
-    "accuracy": 0.88,
-    "effects": [
+    "category": "internal",
+    "description": "参考传统武侠中以深厚内息滋养剑路的思路，强化剑法续航与命中。",
+    "passiveBonuses": {
+      "qiRecovery": 2,
+      "guard": 1
+    },
+    "synergy": [
       {
-        "type": "focus",
-        "target": "self",
-        "duration": 1,
-        "potency": 3
+        "waigongCategories": [
+          "sword"
+        ],
+        "accuracy": 0.06,
+        "damage": 3,
+        "qiRecovery": 1,
+        "guard": 1
       }
     ]
   },
   {
-    "id": "chaos-rock-blade",
-    "name": "乱石刀",
-    "type": "waigong",
-    "power": 9,
-    "qiCost": 3,
-    "accuracy": 0.72,
-    "effects": [
+    "id": "iron-wall-breath",
+    "name": "铁壁藏机功",
+    "type": "neigong",
+    "category": "internal",
+    "description": "以内息敛锋为主，适合暗器与守势反击。",
+    "passiveBonuses": {
+      "qiRecovery": 1,
+      "guard": 2
+    },
+    "synergy": [
       {
-        "type": "bleed",
-        "target": "target",
-        "duration": 2,
-        "potency": 3
+        "waigongCategories": [
+          "hidden-weapon"
+        ],
+        "accuracy": 0.05,
+        "damage": 2,
+        "qiRecovery": 1,
+        "guard": 2
+      }
+    ]
+  },
+  {
+    "id": "frost-river-sword",
+    "name": "清霜江月剑",
+    "type": "waigong",
+    "category": "sword",
+    "description": "强调命中、破绽与节奏转换的均衡剑路。",
+    "techniques": [
+      {
+        "id": "moonbreak-draw",
+        "name": "断潮横月",
+        "description": "以横斩破架，擅长撕开对手门户。",
+        "power": 14,
+        "qiCost": 4,
+        "accuracy": 0.88,
+        "effects": [
+          {
+            "type": "exposed",
+            "target": "target",
+            "duration": 1,
+            "potency": 4
+          }
+        ]
+      },
+      {
+        "id": "snow-return-ring",
+        "name": "回雪封江",
+        "description": "借回身收势凝出剑意，为下一击蓄力。",
+        "power": 10,
+        "qiCost": 3,
+        "accuracy": 0.92,
+        "effects": [
+          {
+            "type": "focus",
+            "target": "self",
+            "duration": 1,
+            "potency": 2
+          }
+        ]
+      },
+      {
+        "id": "lone-boat-night-rain",
+        "name": "孤舟夜雨",
+        "description": "以内息贯锋，一剑定势，消耗较高但压制力强。",
+        "power": 18,
+        "qiCost": 6,
+        "accuracy": 0.84,
+        "effects": [
+          {
+            "type": "exposed",
+            "target": "target",
+            "duration": 1,
+            "potency": 6
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cragbreaker-fist",
+    "name": "裂岳崩山拳",
+    "type": "waigong",
+    "category": "fist",
+    "description": "拳路厚重，重视破防与连打，适合正面压制。",
+    "techniques": [
+      {
+        "id": "stone-splitting-pulse",
+        "name": "碎石震脉",
+        "description": "直取中宫，强行撼开对手门路。",
+        "power": 15,
+        "qiCost": 4,
+        "accuracy": 0.85,
+        "effects": [
+          {
+            "type": "exposed",
+            "target": "target",
+            "duration": 1,
+            "potency": 5
+          }
+        ]
+      },
+      {
+        "id": "gate-crushing-chain",
+        "name": "连环逼门",
+        "description": "连击逼迫对手退守，适合破防后续压。",
+        "power": 12,
+        "qiCost": 3,
+        "accuracy": 0.9
+      }
+    ]
+  },
+  {
+    "id": "falling-star-needles",
+    "name": "流萤飞星手",
+    "type": "waigong",
+    "category": "hidden-weapon",
+    "description": "以暗器游斗为核心，擅长叠加流血并逼迫失位。",
+    "techniques": [
+      {
+        "id": "firefly-scatter",
+        "name": "流萤散芒",
+        "description": "多点袭扰，容易造成持续性创口。",
+        "power": 9,
+        "qiCost": 3,
+        "accuracy": 0.86,
+        "effects": [
+          {
+            "type": "bleed",
+            "target": "target",
+            "duration": 2,
+            "potency": 3
+          }
+        ]
+      },
+      {
+        "id": "returning-shadow-thread",
+        "name": "回风藏针",
+        "description": "借身法藏锋于袖，命中后伤口更深。",
+        "power": 11,
+        "qiCost": 4,
+        "accuracy": 0.82,
+        "effects": [
+          {
+            "type": "bleed",
+            "target": "target",
+            "duration": 2,
+            "potency": 4
+          }
+        ]
       }
     ]
   }

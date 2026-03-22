@@ -2,7 +2,17 @@ import { Character } from './characters';
 import { Combat } from './combat';
 import { buildCharacterProfile, loadGameContent } from './data';
 import { SceneManager } from './scenes';
-import type { CombatActionResult, CombatSummary, EncounterState, GameContent, GameState, MartialArt, PlayerAction, SceneData, TurnResult } from './types';
+import type {
+    CombatActionResult,
+    CombatSummary,
+    EncounterState,
+    GameContent,
+    GameState,
+    PlayerAction,
+    SceneData,
+    Technique,
+    TurnResult,
+} from './types';
 
 interface StartSummary {
     scene: SceneData;
@@ -67,36 +77,54 @@ export class Game {
         };
     }
 
-    takeTurn(action: PlayerAction, martialArtId?: string): TurnResult {
+    takeTurn(action: PlayerAction, techniqueId?: string): TurnResult {
         if (this.hero.isDefeated() || this.rival.isDefeated()) {
             throw new Error('Battle already finished.');
         }
 
-        const playerAction = this.resolvePlayerAction(action, martialArtId);
+        const completedRound = this.round;
         const roundLog: string[] = [];
+        const actionLog: CombatActionResult[] = [];
+        const enemyPlan = this.chooseEnemyAction();
+        let playerAction: CombatActionResult;
+        let enemyAction: CombatActionResult | undefined;
 
-        if (this.rival.isDefeated()) {
-            return {
-                round: this.round,
-                playerAction,
-                roundLog,
-                state: this.getEncounterState(),
-            };
+        if (this.hero.getSpeed() >= this.rival.getSpeed()) {
+            playerAction = this.resolvePlayerAction(action, techniqueId);
+            actionLog.push(playerAction);
+
+            if (!this.rival.isDefeated()) {
+                enemyAction = this.resolveEnemyTurn(enemyPlan);
+                actionLog.push(enemyAction);
+            }
+        } else {
+            enemyAction = this.resolveEnemyTurn(enemyPlan);
+            actionLog.push(enemyAction);
+
+            if (this.hero.isDefeated()) {
+                playerAction = this.createSkippedAction();
+            } else {
+                playerAction = this.resolvePlayerAction(action, techniqueId);
+                actionLog.push(playerAction);
+            }
         }
 
-        const enemyAction = this.resolveEnemyTurn();
         if (!this.hero.isDefeated() && !this.rival.isDefeated()) {
             roundLog.push(...this.combat.resolveRoundEffects(this.hero));
             roundLog.push(...this.combat.resolveRoundEffects(this.rival));
         }
 
+        if (!this.hero.isDefeated() && !this.rival.isDefeated()) {
+            this.round += 1;
+        }
+
         const state = this.getEncounterState();
-        this.round += 1;
 
         return {
-            round: state.round,
+            round: completedRound,
             playerAction,
             enemyAction,
+            actionLog,
             roundLog,
             state,
         };
@@ -106,8 +134,8 @@ export class Game {
         return new Character(buildCharacterProfile(this.content, this.state.heroId)).snapshot();
     }
 
-    getHeroMartialArts(): MartialArt[] {
-        return buildCharacterProfile(this.content, this.state.heroId).martialArts;
+    getHeroTechniques(): Technique[] {
+        return buildCharacterProfile(this.content, this.state.heroId).equipment.waigong.techniques ?? [];
     }
 
     getBattleActions(): Array<{ code: string; action: PlayerAction; label: string }> {
@@ -127,7 +155,7 @@ export class Game {
         this.round = 1;
     }
 
-    private resolvePlayerAction(action: PlayerAction, martialArtId?: string): CombatActionResult {
+    private resolvePlayerAction(action: PlayerAction, techniqueId?: string): CombatActionResult {
         switch (action) {
             case 'attack':
                 return this.combat.resolveBasicAttack(this.hero, this.rival);
@@ -137,13 +165,11 @@ export class Game {
                 return this.combat.resolveMeditate(this.hero);
             case 'martial':
             default:
-                return this.combat.resolveAction(this.hero, this.rival, martialArtId ? this.hero.getMartialArtById(martialArtId) : undefined);
+                return this.combat.resolveTechnique(this.hero, this.rival, techniqueId ? this.hero.getTechniqueById(techniqueId) : undefined);
         }
     }
 
-    private resolveEnemyTurn(): CombatActionResult {
-        const action = this.chooseEnemyAction();
-
+    private resolveEnemyTurn(action: PlayerAction): CombatActionResult {
         switch (action) {
             case 'defend':
                 return this.combat.resolveDefend(this.rival);
@@ -153,7 +179,7 @@ export class Game {
                 return this.combat.resolveBasicAttack(this.rival, this.hero);
             case 'martial':
             default:
-                return this.combat.resolveAction(this.rival, this.hero);
+                return this.combat.resolveTechnique(this.rival, this.hero);
         }
     }
 
@@ -171,5 +197,20 @@ export class Game {
         }
 
         return 'martial';
+    }
+
+    private createSkippedAction(): CombatActionResult {
+        return {
+            actionType: 'attack',
+            attacker: this.hero.name,
+            defender: this.rival.name,
+            martialArt: '未出手',
+            hit: false,
+            damage: 0,
+            defenderRemainingHealth: this.rival.health,
+            attackerRemainingQi: this.hero.qi,
+            defenderGuard: this.rival.guard,
+            summary: `${this.hero.name}尚未来得及出手，已被抢先压制。`,
+        };
     }
 }
