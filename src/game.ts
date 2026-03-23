@@ -2,6 +2,7 @@ import { Character } from './characters';
 import { Combat } from './combat';
 import { buildCharacterProfile, loadGameContent } from './data';
 import { SceneManager } from './scenes';
+import { createEmptyHeroTrainingState, createTrainingOverview, levelUpTraining } from './training';
 import type {
     CombatActionResult,
     CombatSummary,
@@ -13,11 +14,15 @@ import type {
     GearItem,
     GearRarity,
     GearSlot,
+    HeroTrainingOverview,
     KnownGearIds,
     LootTableEntry,
     PlayerAction,
+    SceneEventData,
     SceneData,
     Technique,
+    TrainingResult,
+    TravelResult,
     TurnResult,
     WaigongCategory,
 } from './types';
@@ -57,9 +62,11 @@ export class Game {
             heroLoadout: { ...heroTemplate.equippedMartialArtIds },
             heroGearLoadout: { ...heroTemplate.equippedGearIds },
             heroKnownGearIds: { ...heroTemplate.knownGearIds },
+            cultivation: 0,
+            heroTraining: createEmptyHeroTrainingState(),
         };
         this.scene = this.sceneManager.loadScene(this.state.currentSceneId);
-        this.hero = new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds));
+        this.hero = new Character(this.buildHeroProfile());
         this.rival = new Character(buildCharacterProfile(this.content, this.state.rivalId));
         this.combat = new Combat();
         this.round = 1;
@@ -68,7 +75,7 @@ export class Game {
 
     start(): StartSummary {
         const scene = this.sceneManager.loadScene(this.state.currentSceneId);
-        const hero = new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds));
+        const hero = new Character(this.buildHeroProfile());
         const rival = new Character(buildCharacterProfile(this.content, this.state.rivalId));
         const combat = new Combat();
         const battle = combat.runDuel(hero, rival);
@@ -83,6 +90,61 @@ export class Game {
     beginEncounter(): EncounterState {
         this.resetEncounter();
         return this.getEncounterState();
+    }
+
+    travel(): TravelResult {
+        const scene = this.sceneManager.getCurrentScene();
+        const event = this.chooseSceneEvent(scene.id);
+        const log = [event.description];
+        const cultivationGained = event.cultivationReward ?? 0;
+
+        if (cultivationGained > 0) {
+            this.state.cultivation += cultivationGained;
+            log.push(`你获得了${cultivationGained}点修为。`);
+        }
+
+        if (event.type === 'encounter') {
+            const encounter = this.beginEncounter();
+            log.push(`${encounter.rival.name}现身，遭遇战一触即发。`);
+
+            return {
+                scene,
+                event,
+                encounter,
+                summary: `${scene.title}·${event.title}`,
+                log,
+                cultivationGained,
+                totalCultivation: this.state.cultivation,
+            };
+        }
+
+        return {
+            scene,
+            event,
+            summary: `${scene.title}·${event.title}`,
+            log,
+            cultivationGained,
+            totalCultivation: this.state.cultivation,
+        };
+    }
+
+    getCultivation(): number {
+        return this.state.cultivation;
+    }
+
+    getCurrentScene(): SceneData {
+        return this.sceneManager.getCurrentScene();
+    }
+
+    getAvailableScenes(): SceneData[] {
+        return this.sceneManager.getScenes();
+    }
+
+    travelToScene(sceneId: string): SceneData {
+        const scene = this.sceneManager.transitionToScene(sceneId);
+        this.state.currentSceneId = scene.id;
+        this.scene = scene;
+        return scene;
     }
 
     getEncounterState(): EncounterState {
@@ -157,27 +219,59 @@ export class Game {
     }
 
     getHeroReferenceProfile(): ReturnType<Character['snapshot']> {
-        return new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds)).snapshot();
+        return new Character(this.buildHeroProfile()).snapshot();
     }
 
     getHeroTechniques(): Technique[] {
-        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds).equipment.waigong.techniques ?? [];
+        return this.buildHeroProfile().equipment.waigong.techniques ?? [];
     }
 
     getHeroBasicTechniques(): Technique[] {
-        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds).equipment.waigong.basicTechniques ?? [];
+        return this.buildHeroProfile().equipment.waigong.basicTechniques ?? [];
     }
 
     getHeroLoadoutOptions(): ReturnType<Character['snapshot']>['knownMartialArts'] {
-        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds).knownMartialArts;
+        return this.buildHeroProfile().knownMartialArts;
     }
 
     getHeroGearOptions(): ReturnType<Character['snapshot']>['knownGear'] {
-        return buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds).knownGear;
+        return this.buildHeroProfile().knownGear;
     }
 
     getHeroGearInventory(): ReturnType<Character['snapshot']>['knownGear'] {
         return this.getHeroGearOptions();
+    }
+
+    getHeroTrainingOverview(): HeroTrainingOverview {
+        return createTrainingOverview(this.buildHeroProfile(), this.state.heroTraining, this.state.cultivation);
+    }
+
+    trainHero(optionId: HeroTrainingOverview['options'][number]['id']): TrainingResult {
+        const overview = this.getHeroTrainingOverview();
+        const option = overview.options.find((entry) => entry.id === optionId);
+
+        if (!option) {
+            throw new Error(`Training option not found: ${optionId}`);
+        }
+
+        if (this.state.cultivation < option.nextCost) {
+            throw new Error(`修为不足，${option.name}还需要${option.nextCost}点修为。`);
+        }
+
+        this.state.cultivation -= option.nextCost;
+        this.state.heroTraining = levelUpTraining(this.state.heroTraining, option.id, option.targetMartialArtId);
+
+        const newLevel = option.targetMartialArtId
+            ? this.state.heroTraining.martialArtMastery[option.targetMartialArtId] ?? 0
+            : getBaseTrainingLevel(this.state.heroTraining, option.id);
+
+        return {
+            option,
+            spentCultivation: option.nextCost,
+            remainingCultivation: this.state.cultivation,
+            summary: buildTrainingSummary(option, newLevel),
+            newLevel,
+        };
     }
 
     equipHeroMartialArt(slot: 'qinggong' | 'neigong', martialArtId: string): void {
@@ -241,18 +335,32 @@ export class Game {
 
     private resetEncounter(): void {
         this.scene = this.sceneManager.loadScene(this.state.currentSceneId);
-        this.hero = new Character(buildCharacterProfile(this.content, this.state.heroId, this.state.heroLoadout, this.state.heroGearLoadout, this.state.heroKnownGearIds));
+        this.hero = new Character(this.buildHeroProfile());
         this.rival = new Character(buildCharacterProfile(this.content, this.state.rivalId));
         this.combat = new Combat();
         this.round = 1;
         this.pendingRewards = [];
     }
 
+    private chooseSceneEvent(sceneId: string): SceneEventData {
+        const candidates = this.content.sceneEvents.filter((event) => event.sceneId === sceneId);
+
+        if (candidates.length === 0) {
+            throw new Error(`No scene events configured for scene: ${sceneId}`);
+        }
+
+        return chooseWeighted(candidates, this.random);
+    }
+
     private resolveEncounterRewards(): string[] {
+        const cultivationReward = Math.max(2, this.scene.threats.length);
+        const rewards = [`获得修为：${cultivationReward}点`];
+        this.state.cultivation += cultivationReward;
         const rivalTemplate = this.content.characters.find((entry) => entry.id === this.state.rivalId);
 
         if (!rivalTemplate?.lootTable || rivalTemplate.lootTable.length === 0) {
-            return ['本次战斗未获得新装备。'];
+            rewards.push('本次战斗未获得新装备。');
+            return rewards;
         }
 
         const weightedCandidates = rivalTemplate.lootTable
@@ -261,13 +369,15 @@ export class Game {
             .filter(({ item }) => !this.state.heroKnownGearIds[item.slot].includes(item.id));
 
         if (weightedCandidates.length === 0) {
-            return ['本次战斗未获得新装备。'];
+            rewards.push('本次战斗未获得新装备。');
+            return rewards;
         }
 
         const selected = chooseWeighted(weightedCandidates, this.random);
         this.addHeroGearToInventory(selected.item.slot, selected.item);
 
-        return [`获得装备：${selected.item.name}（${slotLabel(selected.item.slot)} / ${rarityLabel(selected.item.rarity)}）`];
+        rewards.push(`获得装备：${selected.item.name}（${slotLabel(selected.item.slot)} / ${rarityLabel(selected.item.rarity)}）`);
+        return rewards;
     }
 
     private resolveLootCandidate(entry: LootTableEntry): { entry: LootTableEntry; item: GearItem; weight: number } | null {
@@ -362,6 +472,37 @@ export class Game {
 
         return template;
     }
+
+    private buildHeroProfile() {
+        return buildCharacterProfile(
+            this.content,
+            this.state.heroId,
+            this.state.heroLoadout,
+            this.state.heroGearLoadout,
+            this.state.heroKnownGearIds,
+            this.state.heroTraining,
+        );
+    }
+}
+
+function getBaseTrainingLevel(state: GameState['heroTraining'], optionId: HeroTrainingOverview['options'][number]['id']): number {
+    switch (optionId) {
+        case 'body':
+            return state.bodyLevel;
+        case 'breath':
+            return state.breathLevel;
+        case 'movement':
+            return state.movementLevel;
+        case 'strength':
+            return state.strengthLevel;
+        default:
+            return 0;
+    }
+}
+
+function buildTrainingSummary(option: HeroTrainingOverview['options'][number], newLevel: number): string {
+    const target = option.targetMartialArtName ? `《${option.targetMartialArtName}》` : option.name;
+    return `${target}修炼完成，当前层数提升至 ${newLevel}。${option.effectPreview}`;
 }
 
 function chooseWeighted<T extends { weight: number }>(entries: T[], random: () => number): T {

@@ -1,0 +1,207 @@
+[
+    {
+        "id": "hero-shen-guzhou",
+        "name": "沈孤舟",
+        "maxHealth": 72,
+        "maxQi": 28,
+        "attributes": {
+            "strength": 10,
+            "agility": 8,
+            "constitution": 9,
+            "insight": 7
+        },
+        "equippedMartialArtIds": {
+            "qinggong": "cloud-trace-step",
+            "neigong": "tide-surge-heart",
+            "waigong": {
+                "fist": "cragbreaker-fist",
+                "blade": "surging-tide-blade",
+                "sword": "frost-river-sword",
+                "staff": "river-guard-staff",
+                "hidden-weapon": "falling-star-needles"
+            }
+        },
+        "knownMartialArtIds": {
+            "qinggong": [
+                "cloud-trace-step",
+                "drifting-reed-glide",
+                "swallow-feather-shift",
+                "mist-walker-turn"
+            ],
+            "neigong": [
+                "tide-surge-heart",
+                "iron-wall-breath",
+                "blazing-core-mantra",
+                "jade-pulse-canon"
+            ],
+            "waigong": {
+                "fist": [
+                    "cragbreaker-fist"
+                ],
+                "blade": [
+                    "surging-tide-blade"
+                ],
+                "sword": [
+                    "frost-river-sword",
+                    "autumn-water-sword"
+                ],
+                "staff": [
+                    "river-guard-staff"
+                ],
+                "hidden-weapon": [
+                    "falling-star-needles"
+                ]
+            }
+        },
+        "equippedGearIds": {
+            "weapon": "willow-leaf-sword",
+            "clothes": "bamboo-guard-robe",
+            "accessory": "warm-jade-pendant",
+            "bracer": "soft-silk-bracer",
+            "shoes": "reedstep-boots",
+            "hat": "traveler-headband",
+            "ring": "hawk-eye-ring"
+        },
+        "knownGearIds": {
+            "weapon": [
+                "willow-leaf-sword",
+                "storm-iron-gauntlet",
+                "green-edge-saber",
+                "river-pattern-staff"
+            ],
+            "clothes": [
+                "bamboo-guard-robe",
+                "iron-scale-vest",
+                "night-silk-cloak"
+            ],
+            "accessory": [
+                "warm-jade-pendant",
+                "swift-shadow-charm",
+                "jade-safety-lock"
+            ],
+            "bracer": [
+                "iron-guard-bracer",
+                "soft-silk-bracer",
+                "hidden-arrow-bracer"
+            ],
+            "shoes": [
+                "reedstep-boots",
+                "stonewalk-boots",
+                "feathertrace-boots"
+            ],
+            "hat": [
+                "bamboo-hat",
+                "traveler-headband",
+                "black-veil-hood"
+            ],
+            "ring": [
+                "hawk-eye-ring",
+                "river-jade-ring",
+                "iron-bone-ring"
+            ]
+        },
+        "lootTable": []
+    },
+    {
+        "id": "bandit-blackwind",
+        "name": "黑风盗",
+        "maxHealth": 48,
+        "maxQi": 12,
+        "attributes": {
+            "strength": 7,
+            "agility": 5,
+            "constitution": 6,
+            "insight": 4
+        },
+        "equippedMartialArtIds": {
+            "qinggong": "swallow-feather-shift",
+            "neigong": "iron-wall-breath",
+            "waigong": {
+                "fist": null,
+                "blade": null,
+                "sword": null,
+                "staff": null,
+                "hidden-weapon": "falling-star-needles"
+            }
+        },
+        "knownMartialArtIds": {
+            "qinggong": [
+                "swallow-feather-shift"
+            ],
+            "neigong": [
+                "iron-wall-breath"
+            ],
+            "waigong": {
+                "fist": [],
+                "blade": [],
+                "sword": [],
+                "staff": [],
+                "hidden-weapon": [
+                    "falling-star-needles"
+                ]
+            }
+        },
+        "equippedGearIds": {
+            "weapon": "swallowtail-needle-case",
+            "clothes": "night-silk-cloak",
+            "accessory": "swift-shadow-charm",
+            "bracer": "hidden-arrow-bracer",
+            "shoes": "feathertrace-boots",
+            "hat": "black-veil-hood",
+            "ring": "hawk-eye-ring"
+        },
+        "knownGearIds": {
+            "weapon": [
+                "swallowtail-needle-case"
+            ],
+            "clothes": [
+                "night-silk-cloak"
+            ],
+            "accessory": [
+                "swift-shadow-charm"
+            ],
+            "bracer": [
+                "hidden-arrow-bracer"
+            ],
+            "shoes": [
+                "feathertrace-boots"
+            ],
+            "hat": [
+                "black-veil-hood"
+            ],
+            "ring": [
+                "hawk-eye-ring"
+            ]
+        },
+        "lootTable": [
+            {
+                "gearId": "swallowtail-needle-case",
+                "weight": 6
+            },
+            {
+                "gearId": "hidden-arrow-bracer",
+                "weight": 4
+            },
+            {
+                "gearId": "black-veil-hood",
+                "weight": 3
+            },
+            {
+                "gearId": "feathertrace-boots",
+                "weight": 3
+            },
+            {
+                "gearId": "swift-shadow-charm",
+                "weight": 2
+            },
+            {
+                "gearId": "hawk-eye-ring",
+                "weight": 2
+            },
+            {
+                "gearId": "night-silk-cloak",
+                "weight": 2
+            }
+        ]
+    }
+]

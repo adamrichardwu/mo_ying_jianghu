@@ -1,0 +1,32 @@
+[
+    {
+        "id": "ancient-road",
+        "title": "青石古道",
+        "description": "山风掠过古道，行商与流寇都在这里试探彼此的胆色。",
+        "threats": [
+            "流寇",
+            "伏击",
+            "江湖传闻"
+        ],
+        "lootBias": {
+            "common": 0,
+            "uncommon": 2,
+            "rare": -1
+        }
+    },
+    {
+        "id": "teahouse",
+        "title": "临河茶肆",
+        "description": "茶客混杂，消息和麻烦往往一同上门。",
+        "threats": [
+            "传闻",
+            "悬赏",
+            "暗探"
+        ],
+        "lootBias": {
+            "common": -1,
+            "uncommon": 1,
+            "rare": 2
+        }
+    }
+]

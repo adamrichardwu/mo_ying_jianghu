@@ -4,9 +4,13 @@
   "description": "A martial arts adventure game set in a fictional world.",
   "main": "src/main.ts",
   "scripts": {
-    "start": "ts-node src/main.ts",
-    "build": "tsc",
+    "start": "vite",
+    "cli": "ts-node -P tsconfig.node.json src/main.ts",
+    "build": "npm run build:web && npm run build:cli",
+    "build:web": "vite build",
+    "build:cli": "tsc -p tsconfig.node.json",
     "test": "vitest run",
+    "test:portraits": "vitest run tests/portrait-quality.test.ts",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -15,6 +19,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.12.12",
+    "vite": "^5.4.19",
     "vitest": "^3.2.4"
   },
   "repository": {

@@ -1,12 +1,13 @@
 # Mo Ying Jiang Hu
 
-墨影江湖是一个使用 TypeScript 构建的武侠题材原型项目。当前代码已经具备可在终端直接游玩的最小文字游戏形态：主菜单、角色面板、武学目录、战前换装、交互式战斗，以及对应的自动化测试。
+墨影江湖是一个使用 TypeScript 构建的武侠题材原型项目。当前代码已经同时具备浏览器界面和终端界面两套入口：浏览器版提供可点击的战斗、武学、装备与背包面板，终端版则保留原有文字菜单与回合战斗流程。
 
 ## Version
 
 - **当前版本：** v1.1.0
-- **版本代号：** Terminal Combat Update
+- **版本代号：** Browser Interface Preview
 - **当前工作树已实现：**
+   - 浏览器主界面：总览、战斗、武学、装备、背包、说明
    - 终端主菜单、角色面板与武学目录
    - 轻功 / 内功独立装配
    - 拳 / 刀 / 剑 / 棍 / 暗器五类外功分流派预设
@@ -24,6 +25,7 @@
 - 角色基础属性与武学配置
 - 武学库存与装备库存解析
 - 场景管理与起始场景加载
+- 浏览器可视化界面与点击交互
 - 终端主菜单、换装菜单与交互式文字战斗
 - 基础回合制战斗与胜负判定
 - 普通攻击、防御、调息、武学释放
@@ -40,7 +42,10 @@
 mo-ying-jianghu
 ├── src
 │   ├── game.ts         # Game orchestration and MVP flow
-│   ├── main.ts          # Entry point of the game
+│   ├── main.ts          # CLI entry point
+│   ├── web
+│   │   ├── main.ts      # Browser UI entry point
+│   │   └── styles.css   # Browser UI styles
 │   ├── characters       # Contains character-related logic
 │   │   └── index.ts     # Character domain model
 │   ├── data             # JSON-driven game content
@@ -78,37 +83,43 @@ mo-ying-jianghu
    npm install
    ```
 
-3. **Run the game:**
+3. **Run the browser interface:**
    ```bash
    npm start
    ```
 
-   启动后会进入终端主菜单，可进行以下操作：
-   - 开始江湖遭遇
-   - 查看角色面板
-   - 查看武学目录
-   - 更换装备
-   - 查看操作说明
-   - 退出
+   启动后会打开 Vite 开发服务器。浏览器界面可进行以下操作：
+   - 发起遭遇并直接点击按钮进行回合战斗
+   - 查看角色状态与当前敌人面板
+   - 调整轻功、内功与五类外功预设
+   - 更换七个装备槽位并查看活跃外功联动
+   - 查看背包与战利品记录
 
-4. **Build the project:**
+4. **Run the CLI version:**
+   ```bash
+   npm run cli
+   ```
+
+   终端版仍然保留完整文字菜单，适合快速验证规则和调试数值。
+
+5. **Build the project:**
    ```bash
    npm run build
    ```
 
-5. **Run tests:**
+6. **Run tests:**
    ```bash
    npm test
    ```
 
 ## Gameplay Details
 
-当前版本会在终端中提供一个完整的最小文字游戏循环：
+当前版本会在浏览器中提供一个完整的最小可视化游戏循环，同时保留终端模式：
 
 - 玩家角色“沈孤舟”进入起始场景“青石古道”
-- 通过主菜单查看角色、武学与当前装备信息
+- 通过浏览器标签页查看角色、武学、装备与当前遭遇信息
 - 在战前切换轻功、内功、各兵器类别外功，以及武器、衣服、饰品、护腕、鞋子、帽子、戒指
-- 在战斗中选择普通攻击、武学、防御、调息
+- 在战斗中点击普通攻击、武学、防御、调息等操作
 - 当前武器会决定当前生效的外功流派；未装备武器时默认按拳法流派作战
 - 普通攻击会随机调用当前外功下的基础招式，不再额外二次选择
 - 武学可触发流血、破绽、凝神等状态效果

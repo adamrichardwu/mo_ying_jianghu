@@ -22,10 +22,13 @@ describe('data', () => {
   it('loads loot rarity and scene bias data', () => {
     const swallowtailNeedleCase = content.gear.find((item) => item.id === 'swallowtail-needle-case');
     const ancientRoad = content.scenes.find((scene) => scene.id === 'ancient-road');
+    const ancientRoadRumor = content.sceneEvents.find((event) => event.id === 'ancient-road-rumor');
     const rivalTemplate = content.characters.find((character) => character.id === content.config.rivalId);
 
     expect(swallowtailNeedleCase?.rarity).toBe('uncommon');
     expect(ancientRoad?.lootBias?.uncommon).toBe(2);
+    expect(ancientRoadRumor?.type).toBe('rumor');
+    expect(ancientRoadRumor?.cultivationReward).toBe(1);
     expect(rivalTemplate?.lootTable?.some((entry) => entry.gearId === 'swallowtail-needle-case')).toBe(true);
   });
 });
@@ -221,7 +224,69 @@ describe('game', () => {
       state = lastTurn.state;
     }
 
+    expect(lastTurn?.rewards).toContain('获得修为：3点');
     expect(lastTurn?.rewards).toContain('获得装备：燕尾针囊（武器 / 良品）');
     expect(game.getHeroGearInventory().weapon.map((item) => item.name)).toContain('燕尾针囊');
+    expect(game.getCultivation()).toBe(3);
+  });
+
+  it('grants cultivation from non-combat travel events', () => {
+    const game = new Game(() => 0);
+
+    const result = game.travel();
+
+    expect(result.event.id).toBe('ancient-road-rumor');
+    expect(result.encounter).toBeUndefined();
+    expect(result.cultivationGained).toBe(1);
+    expect(result.totalCultivation).toBe(1);
+    expect(game.getCultivation()).toBe(1);
+  });
+
+  it('can switch scenes and trigger encounter travel events', () => {
+    const game = new Game(() => 0.99);
+
+    const scene = game.travelToScene('teahouse');
+    const result = game.travel();
+
+    expect(scene.title).toBe('临河茶肆');
+    expect(game.getCurrentScene().id).toBe('teahouse');
+    expect(result.event.id).toBe('teahouse-spy');
+    expect(result.encounter).toBeDefined();
+    expect(result.encounter?.scene.id).toBe('teahouse');
+    expect(result.totalCultivation).toBe(0);
+  });
+
+  it('spends cultivation on body training and permanently increases base stats', () => {
+    const game = new Game(() => 0);
+
+    for (let index = 0; index < 3; index += 1) {
+      game.travel();
+    }
+
+    const before = game.getHeroReferenceProfile();
+    const result = game.trainHero('body');
+    const after = game.getHeroReferenceProfile();
+
+    expect(result.spentCultivation).toBe(3);
+    expect(result.newLevel).toBe(1);
+    expect(after.maxHealth).toBe(before.maxHealth + 6);
+    expect(after.attributes.constitution).toBe(before.attributes.constitution + 1);
+    expect(game.getCultivation()).toBe(0);
+  });
+
+  it('improves current waigong through focused training', () => {
+    const game = new Game(() => 0);
+
+    for (let index = 0; index < 4; index += 1) {
+      game.travel();
+    }
+
+    const before = game.getHeroReferenceProfile();
+    const result = game.trainHero('waigong');
+    const after = game.getHeroReferenceProfile();
+
+    expect(result.newLevel).toBe(1);
+    expect(after.equipment.waigong.passiveBonuses?.damage ?? 0).toBeGreaterThan(before.equipment.waigong.passiveBonuses?.damage ?? 0);
+    expect(after.equipment.waigong.passiveBonuses?.accuracy ?? 0).toBeGreaterThan(before.equipment.waigong.passiveBonuses?.accuracy ?? 0);
   });
 });

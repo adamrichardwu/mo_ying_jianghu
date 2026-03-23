@@ -1,0 +1,471 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const promises_1 = require("node:readline/promises");
+const node_process_1 = require("node:process");
+const game_1 = require("./game");
+const mainMenuOptions = [
+    { code: '1', label: '开始江湖遭遇' },
+    { code: '2', label: '查看角色面板' },
+    { code: '3', label: '查看武学目录' },
+    { code: '4', label: '查看装备背包' },
+    { code: '5', label: '更换装备' },
+    { code: '6', label: '查看操作说明' },
+    { code: '7', label: '退出' },
+];
+function formatStatuses(statuses) {
+    if (statuses.length === 0) {
+        return '无';
+    }
+    return statuses.map((status) => `${status.name}(层效 ${status.potency}, 剩余 ${status.duration} 回合)`).join('、');
+}
+function printDivider() {
+    console.log('----------------------------------------');
+}
+function printState(state) {
+    printDivider();
+    console.log(`第 ${state.round} 回合`);
+    console.log(`场景：${state.scene.title}`);
+    console.log(state.scene.description);
+    console.log(`你：${state.hero.name}  气血 ${state.hero.health}/${state.hero.maxHealth}  真气 ${state.hero.qi}/${state.hero.maxQi}  防御 ${state.hero.guard}`);
+    console.log(`你方状态：${formatStatuses(state.hero.statuses)}`);
+    console.log(`敌：${state.rival.name}  气血 ${state.rival.health}/${state.rival.maxHealth}  真气 ${state.rival.qi}/${state.rival.maxQi}  防御 ${state.rival.guard}`);
+    console.log(`敌方状态：${formatStatuses(state.rival.statuses)}`);
+}
+function printTurnResult(result) {
+    result.actionLog.forEach((action, index) => {
+        const side = index === 0 && result.playerAction === action ? '你方行动' : action.attacker === result.state.hero.name ? '你方行动' : '敌方行动';
+        console.log(`${side}：${action.summary}`);
+    });
+    result.roundLog.forEach((entry) => {
+        console.log(`回合结算：${entry}`);
+    });
+    if (result.state.isFinished) {
+        printDivider();
+        if (result.state.winner === result.state.hero.name) {
+            console.log(`胜负已分，${result.state.winner}赢下了这场遭遇战。`);
+            result.rewards.forEach((reward) => {
+                console.log(`战利品：${reward}`);
+            });
+        }
+        else {
+            console.log(`你已落败，胜者是${result.state.winner}。`);
+        }
+    }
+}
+function parseAction(answer, actions) {
+    const normalized = answer.trim().toLowerCase();
+    const matched = actions.find((entry) => entry.code === normalized);
+    return matched?.action;
+}
+function printTitle() {
+    printDivider();
+    console.log('墨影江湖：终端重构试作');
+    console.log('轻功定先后，内功为根基，外功主招式。');
+    printDivider();
+}
+function printMainMenu() {
+    console.log('主菜单');
+    mainMenuOptions.forEach((entry) => {
+        console.log(`${entry.code}. ${entry.label}`);
+    });
+}
+function printHeroPanel(game) {
+    const hero = game.getHeroReferenceProfile();
+    printDivider();
+    console.log(`角色：${hero.name}`);
+    console.log(`气血：${hero.maxHealth}`);
+    console.log(`真气：${hero.maxQi}`);
+    console.log(`臂力：${hero.attributes.strength}`);
+    console.log(`身法：${hero.attributes.agility}`);
+    console.log(`根骨：${hero.attributes.constitution}`);
+    console.log(`悟性：${hero.attributes.insight}`);
+    console.log(`轻功：${hero.equipment.qinggong.name} - ${hero.equipment.qinggong.description}`);
+    console.log(`内功：${hero.equipment.neigong.name} - ${hero.equipment.neigong.description}`);
+    console.log(`当前外功：${hero.equipment.waigong.name} [${translateCategory(hero.equipment.activeWaigongCategory)}] - ${hero.equipment.waigong.description}`);
+    console.log(`武器：${hero.gear.weapon ? `${hero.gear.weapon.name} - ${hero.gear.weapon.description}` : '未装备武器，默认按拳法流派作战'}`);
+    console.log(`衣服：${hero.gear.clothes.name} - ${hero.gear.clothes.description}`);
+    console.log(`饰品：${hero.gear.accessory.name} - ${hero.gear.accessory.description}`);
+    console.log(`护腕：${hero.gear.bracer.name} - ${hero.gear.bracer.description}`);
+    console.log(`鞋子：${hero.gear.shoes.name} - ${hero.gear.shoes.description}`);
+    console.log(`帽子：${hero.gear.hat.name} - ${hero.gear.hat.description}`);
+    console.log(`戒指：${hero.gear.ring.name} - ${hero.gear.ring.description}`);
+}
+function describeMartialArt(martialArt) {
+    return `${martialArt.name} - ${martialArt.description}`;
+}
+function describeGear(item) {
+    return `${item.name} - ${item.description}`;
+}
+function describeTechnique(technique) {
+    const effects = technique.effects && technique.effects.length > 0
+        ? `，效果：${technique.effects.map((effect) => `${effect.target === 'self' ? '自身' : '目标'}获得${translateStatusType(effect.type)}(${effect.potency}/${effect.duration}回合)`).join('；')}`
+        : '';
+    return `${technique.name} 威力 ${technique.power} / 消耗 ${technique.qiCost} / 命中 ${Math.round(technique.accuracy * 100)}%${effects}`;
+}
+function printMartialArts(game) {
+    const hero = game.getHeroReferenceProfile();
+    printDivider();
+    console.log('武学配置');
+    console.log(`轻功：${hero.equipment.qinggong.name}`);
+    console.log(`  被动：命中 +${Math.round((hero.equipment.qinggong.passiveBonuses?.accuracy ?? 0) * 100)}%，闪避 +${Math.round((hero.equipment.qinggong.passiveBonuses?.evasion ?? 0) * 100)}%，速度 +${hero.equipment.qinggong.passiveBonuses?.speed ?? 0}`);
+    console.log(`内功：${hero.equipment.neigong.name}`);
+    console.log(`  被动：回气 +${hero.equipment.neigong.passiveBonuses?.qiRecovery ?? 0}，防御 +${hero.equipment.neigong.passiveBonuses?.guard ?? 0}`);
+    console.log(`当前兵器：${hero.gear.weapon ? hero.gear.weapon.name : '空手'}`);
+    console.log(`当前外功：${hero.equipment.waigong.name} [${translateCategory(hero.equipment.activeWaigongCategory)}]`);
+    console.log('分类外功装配');
+    console.log(`拳：${hero.equipment.waigongLoadout.fist.name}`);
+    console.log(`刀：${hero.equipment.waigongLoadout.blade.name}`);
+    console.log(`剑：${hero.equipment.waigongLoadout.sword.name}`);
+    console.log(`棍：${hero.equipment.waigongLoadout.staff.name}`);
+    console.log(`暗器：${hero.equipment.waigongLoadout['hidden-weapon'].name}`);
+    console.log(`武器：${hero.gear.weapon ? hero.gear.weapon.name : '空手'}`);
+    console.log(`衣服：${hero.gear.clothes.name}`);
+    console.log(`饰品：${hero.gear.accessory.name}`);
+    console.log(`护腕：${hero.gear.bracer.name}`);
+    console.log(`鞋子：${hero.gear.shoes.name}`);
+    console.log(`帽子：${hero.gear.hat.name}`);
+    console.log(`戒指：${hero.gear.ring.name}`);
+    console.log('基础招式');
+    game.getHeroBasicTechniques().forEach((technique, index) => {
+        console.log(`${index + 1}. ${describeTechnique(technique)}`);
+    });
+    console.log('绝招列表');
+    game.getHeroTechniques().forEach((technique, index) => {
+        console.log(`${index + 1}. ${describeTechnique(technique)}`);
+    });
+}
+function printGearInventory(game) {
+    const inventory = game.getHeroGearInventory();
+    printDivider();
+    console.log('装备背包');
+    console.log(`武器：${inventory.weapon.map((item) => item.name).join('、') || '无'}`);
+    console.log(`衣服：${inventory.clothes.map((item) => item.name).join('、') || '无'}`);
+    console.log(`饰品：${inventory.accessory.map((item) => item.name).join('、') || '无'}`);
+    console.log(`护腕：${inventory.bracer.map((item) => item.name).join('、') || '无'}`);
+    console.log(`鞋子：${inventory.shoes.map((item) => item.name).join('、') || '无'}`);
+    console.log(`帽子：${inventory.hat.map((item) => item.name).join('、') || '无'}`);
+    console.log(`戒指：${inventory.ring.map((item) => item.name).join('、') || '无'}`);
+}
+function printHelp() {
+    printDivider();
+    console.log('操作说明');
+    console.log('1. 角色一次只能装备 1 个轻功和 1 个内功。');
+    console.log('2. 拳、刀、剑、棍、暗器五个流派各自可以预设 1 门外功。');
+    console.log('3. 当前使用的外功由武器决定：拳套对应拳法、刀对应刀法、剑对应剑法、棍对应棍法、暗器对应暗器套路。');
+    console.log('4. 卸下武器时视为空手状态，默认按拳法流派作战。');
+    console.log('5. 普通攻击会从当前外功的基础招式池中随机施展一招。');
+    console.log('6. 破绽会提高目标承受的下一次伤害，流血会在回合结算时扣血，凝神会强化下一次进攻。');
+    console.log('7. 装备共有 7 个槽位：武器、衣服、饰品、护腕、鞋子、帽子、戒指。');
+    console.log('8. 战斗胜利后会掉落敌方装备，并自动进入装备背包。');
+    console.log('9. 在主菜单中可以分别查看背包，并切换轻功、内功、各流派外功，以及 7 个装备槽位。');
+    console.log('10. 每回合按速度决定先后手，速度更高的一方先行动。');
+    console.log('11. 在战斗界面输入 q 可退出当前遭遇并返回主菜单。');
+}
+async function chooseTechnique(rl, game) {
+    const techniques = game.getHeroTechniques();
+    if (techniques.length === 0) {
+        console.log('当前外功没有可主动施展的绝招。');
+        return undefined;
+    }
+    printDivider();
+    console.log('选择绝招');
+    techniques.forEach((technique, index) => {
+        console.log(`${index + 1}. ${describeTechnique(technique)}`);
+    });
+    console.log('q. 返回上一层');
+    const answer = await rl.question('绝招编号：');
+    if (answer.trim().toLowerCase() === 'q') {
+        return undefined;
+    }
+    const index = Number(answer.trim()) - 1;
+    if (!Number.isInteger(index) || index < 0 || index >= techniques.length) {
+        console.log('无效绝招编号。');
+        return undefined;
+    }
+    return techniques[index];
+}
+async function runEncounter(rl, game) {
+    let state = game.beginEncounter();
+    const actions = game.getBattleActions();
+    while (!state.isFinished) {
+        printState(state);
+        actions.forEach((entry) => {
+            console.log(`${entry.code}. ${entry.label}`);
+        });
+        console.log('5. 查看状态');
+        console.log('6. 查看武学');
+        console.log('q. 返回主菜单');
+        const answer = await rl.question('你的选择：');
+        const normalized = answer.trim().toLowerCase();
+        if (normalized === 'q') {
+            console.log('你暂时离开了这场遭遇，返回主菜单。');
+            return;
+        }
+        if (normalized === '5') {
+            printState(state);
+            continue;
+        }
+        if (normalized === '6') {
+            printMartialArts(game);
+            continue;
+        }
+        const action = parseAction(answer, actions);
+        if (!action) {
+            console.log('无效输入，请重新输入编号。');
+            continue;
+        }
+        let techniqueId;
+        if (action === 'martial') {
+            const technique = await chooseTechnique(rl, game);
+            if (!technique) {
+                continue;
+            }
+            techniqueId = technique.id;
+        }
+        const result = game.takeTurn(action, techniqueId);
+        printTurnResult(result);
+        state = result.state;
+    }
+    await rl.question('按回车返回主菜单。');
+}
+async function runEquipmentMenu(rl, game) {
+    const menuOptions = [
+        { code: '1', label: '更换武学' },
+        { code: '2', label: '更换装备' },
+    ];
+    while (true) {
+        printDivider();
+        console.log('调整配置');
+        menuOptions.forEach((entry) => console.log(`${entry.code}. ${entry.label}`));
+        console.log('q. 返回主菜单');
+        const answer = await rl.question('请选择：');
+        const normalized = answer.trim().toLowerCase();
+        if (normalized === 'q') {
+            return;
+        }
+        if (normalized === '1') {
+            await runMartialArtLoadoutMenu(rl, game);
+            continue;
+        }
+        if (normalized === '2') {
+            await runGearLoadoutMenu(rl, game);
+            continue;
+        }
+        console.log('无效选择。');
+    }
+}
+async function runMartialArtLoadoutMenu(rl, game) {
+    const waigongSlots = [
+        { code: '3', category: 'fist', label: '拳法' },
+        { code: '4', category: 'blade', label: '刀法' },
+        { code: '5', category: 'sword', label: '剑法' },
+        { code: '6', category: 'staff', label: '棍法' },
+        { code: '7', category: 'hidden-weapon', label: '暗器' },
+    ];
+    while (true) {
+        const hero = game.getHeroReferenceProfile();
+        const options = game.getHeroLoadoutOptions();
+        printDivider();
+        console.log('更换武学');
+        console.log(`当前轻功：${hero.equipment.qinggong.name}`);
+        console.log(`当前内功：${hero.equipment.neigong.name}`);
+        console.log(`当前外功：${hero.equipment.waigong.name} [${translateCategory(hero.equipment.activeWaigongCategory)}]`);
+        console.log('1. 更换轻功');
+        console.log('2. 更换内功');
+        waigongSlots.forEach((entry) => console.log(`${entry.code}. 更换${entry.label}`));
+        console.log('q. 返回主菜单');
+        const answer = await rl.question('请选择装备槽：');
+        const normalized = answer.trim().toLowerCase();
+        if (normalized === 'q') {
+            return;
+        }
+        if (normalized === '1' || normalized === '2') {
+            const slot = normalized === '1' ? 'qinggong' : 'neigong';
+            const label = normalized === '1' ? '轻功' : '内功';
+            const list = options[slot];
+            printDivider();
+            console.log(`可选${label}`);
+            list.forEach((martialArt, index) => {
+                console.log(`${index + 1}. ${describeMartialArt(martialArt)}`);
+            });
+            console.log('q. 返回上一层');
+            const choice = await rl.question('请输入编号：');
+            if (choice.trim().toLowerCase() === 'q') {
+                continue;
+            }
+            const optionIndex = Number(choice.trim()) - 1;
+            if (!Number.isInteger(optionIndex) || optionIndex < 0 || optionIndex >= list.length) {
+                console.log('无效编号。');
+                continue;
+            }
+            const martialArt = list[optionIndex];
+            game.equipHeroMartialArt(slot, martialArt.id);
+            console.log(`已将${label}更换为${martialArt.name}。`);
+            continue;
+        }
+        const target = waigongSlots.find((entry) => entry.code === normalized);
+        if (!target) {
+            console.log('无效选择。');
+            continue;
+        }
+        printDivider();
+        console.log(`可选${target.label}`);
+        console.log('0. 卸下该流派外功，改用基础外功');
+        options.waigong[target.category].forEach((martialArt, index) => {
+            console.log(`${index + 1}. ${describeMartialArt(martialArt)}`);
+        });
+        console.log('q. 返回上一层');
+        const choice = await rl.question('请输入编号：');
+        if (choice.trim().toLowerCase() === 'q') {
+            continue;
+        }
+        if (choice.trim() === '0') {
+            game.equipHeroWaigong(target.category, null);
+            console.log(`已将${target.label}恢复为基础外功。`);
+            continue;
+        }
+        const optionIndex = Number(choice.trim()) - 1;
+        if (!Number.isInteger(optionIndex) || optionIndex < 0 || optionIndex >= options.waigong[target.category].length) {
+            console.log('无效编号。');
+            continue;
+        }
+        const martialArt = options.waigong[target.category][optionIndex];
+        game.equipHeroWaigong(target.category, martialArt.id);
+        console.log(`已将${target.label}更换为${martialArt.name}。`);
+    }
+}
+async function runGearLoadoutMenu(rl, game) {
+    const slots = [
+        { code: '1', slot: 'weapon', label: '武器' },
+        { code: '2', slot: 'clothes', label: '衣服' },
+        { code: '3', slot: 'accessory', label: '饰品' },
+        { code: '4', slot: 'bracer', label: '护腕' },
+        { code: '5', slot: 'shoes', label: '鞋子' },
+        { code: '6', slot: 'hat', label: '帽子' },
+        { code: '7', slot: 'ring', label: '戒指' },
+    ];
+    while (true) {
+        const hero = game.getHeroReferenceProfile();
+        const options = game.getHeroGearOptions();
+        printDivider();
+        console.log('更换装备');
+        console.log(`当前武器：${hero.gear.weapon ? hero.gear.weapon.name : '空手'}`);
+        console.log(`当前衣服：${hero.gear.clothes.name}`);
+        console.log(`当前饰品：${hero.gear.accessory.name}`);
+        console.log(`当前护腕：${hero.gear.bracer.name}`);
+        console.log(`当前鞋子：${hero.gear.shoes.name}`);
+        console.log(`当前帽子：${hero.gear.hat.name}`);
+        console.log(`当前戒指：${hero.gear.ring.name}`);
+        slots.forEach((entry) => console.log(`${entry.code}. 更换${entry.label}`));
+        console.log('q. 返回上一层');
+        const answer = await rl.question('请选择装备槽：');
+        const normalized = answer.trim().toLowerCase();
+        if (normalized === 'q') {
+            return;
+        }
+        const target = slots.find((entry) => entry.code === normalized);
+        if (!target) {
+            console.log('无效选择。');
+            continue;
+        }
+        printDivider();
+        console.log(`可选${target.label}`);
+        if (target.slot === 'weapon') {
+            console.log('0. 卸下武器，改用基础外功');
+        }
+        options[target.slot].forEach((item, index) => {
+            console.log(`${index + 1}. ${describeGear(item)}`);
+        });
+        console.log('q. 返回上一层');
+        const choice = await rl.question('请输入编号：');
+        if (choice.trim().toLowerCase() === 'q') {
+            continue;
+        }
+        if (target.slot === 'weapon' && choice.trim() === '0') {
+            game.equipHeroGear('weapon', null);
+            console.log('已卸下武器，当前会默认按拳法流派作战。');
+            continue;
+        }
+        const optionIndex = Number(choice.trim()) - 1;
+        if (!Number.isInteger(optionIndex) || optionIndex < 0 || optionIndex >= options[target.slot].length) {
+            console.log('无效编号。');
+            continue;
+        }
+        const item = options[target.slot][optionIndex];
+        game.equipHeroGear(target.slot, item.id);
+        console.log(`已将${target.label}更换为${item.name}。`);
+    }
+}
+function translateCategory(category) {
+    switch (category) {
+        case 'blade':
+            return '刀';
+        case 'sword':
+            return '剑';
+        case 'staff':
+            return '棍';
+        case 'fist':
+            return '拳';
+        case 'hidden-weapon':
+            return '暗器';
+        default:
+            return category;
+    }
+}
+function translateStatusType(type) {
+    switch (type) {
+        case 'bleed':
+            return '流血';
+        case 'exposed':
+            return '破绽';
+        case 'focus':
+            return '凝神';
+        default:
+            return type;
+    }
+}
+async function main() {
+    const game = new game_1.Game();
+    const rl = (0, promises_1.createInterface)({ input: node_process_1.stdin, output: node_process_1.stdout });
+    try {
+        printTitle();
+        while (true) {
+            printMainMenu();
+            const answer = await rl.question('请选择：');
+            const normalized = answer.trim().toLowerCase();
+            if (normalized === '1') {
+                await runEncounter(rl, game);
+                continue;
+            }
+            if (normalized === '2') {
+                printHeroPanel(game);
+                continue;
+            }
+            if (normalized === '3') {
+                printMartialArts(game);
+                continue;
+            }
+            if (normalized === '4') {
+                printGearInventory(game);
+                continue;
+            }
+            if (normalized === '5') {
+                await runEquipmentMenu(rl, game);
+                continue;
+            }
+            if (normalized === '6') {
+                printHelp();
+                continue;
+            }
+            if (normalized === '7' || normalized === 'q') {
+                console.log('江湖路远，后会有期。');
+                return;
+            }
+            console.log('无效输入，请重新选择主菜单编号。');
+        }
+    }
+    finally {
+        rl.close();
+    }
+}
+void main();

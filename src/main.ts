@@ -2,16 +2,19 @@ import { createInterface } from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 
 import { Game } from './game';
-import type { EncounterState, EquippedGearIds, GearItem, MartialArt, PlayerAction, StatusEffect, Technique, TurnResult, WaigongCategory } from './types';
+import type { EncounterState, EquippedGearIds, GearItem, MartialArt, PlayerAction, SceneData, StatusEffect, Technique, TurnResult, WaigongCategory } from './types';
 
 const mainMenuOptions = [
 	{ code: '1', label: '开始江湖遭遇' },
-	{ code: '2', label: '查看角色面板' },
-	{ code: '3', label: '查看武学目录' },
-	{ code: '4', label: '查看装备背包' },
-	{ code: '5', label: '更换装备' },
-	{ code: '6', label: '查看操作说明' },
-	{ code: '7', label: '退出' },
+	{ code: '2', label: '游历当前场景' },
+	{ code: '3', label: '切换游历场景' },
+	{ code: '4', label: '查看角色面板' },
+	{ code: '5', label: '查看武学目录' },
+	{ code: '6', label: '查看装备背包' },
+	{ code: '7', label: '修炼' },
+	{ code: '8', label: '更换装备' },
+	{ code: '9', label: '查看操作说明' },
+	{ code: '10', label: '退出' },
 ];
 
 function formatStatuses(statuses: StatusEffect[]): string {
@@ -82,8 +85,11 @@ function printMainMenu(): void {
 
 function printHeroPanel(game: Game): void {
 	const hero = game.getHeroReferenceProfile();
+	const scene = game.getCurrentScene();
 	printDivider();
 	console.log(`角色：${hero.name}`);
+	console.log(`当前场景：${scene.title}`);
+	console.log(`累计修为：${game.getCultivation()}`);
 	console.log(`气血：${hero.maxHealth}`);
 	console.log(`真气：${hero.maxQi}`);
 	console.log(`臂力：${hero.attributes.strength}`);
@@ -164,6 +170,31 @@ function printGearInventory(game: Game): void {
 	console.log(`戒指：${inventory.ring.map((item) => item.name).join('、') || '无'}`);
 }
 
+function printTrainingOverview(game: Game): void {
+	const overview = game.getHeroTrainingOverview();
+	printDivider();
+	console.log(`当前修为：${overview.cultivation}`);
+	console.log(`基础修炼：筋骨 ${overview.state.bodyLevel} / 吐纳 ${overview.state.breathLevel} / 走桩 ${overview.state.movementLevel} / 臂力 ${overview.state.strengthLevel}`);
+	console.log(`基础收益：气血 +${overview.bonuses.maxHealth} / 真气 +${overview.bonuses.maxQi} / 臂力 +${overview.bonuses.attributes.strength} / 身法 +${overview.bonuses.attributes.agility} / 根骨 +${overview.bonuses.attributes.constitution} / 悟性 +${overview.bonuses.attributes.insight}`);
+	console.log(`武学收益：命中 +${Math.round(overview.bonuses.passiveBonuses.accuracy * 100)}% / 闪避 +${Math.round(overview.bonuses.passiveBonuses.evasion * 100)}% / 速度 +${overview.bonuses.passiveBonuses.speed} / 回气 +${overview.bonuses.passiveBonuses.qiRecovery} / 护体 +${overview.bonuses.passiveBonuses.guard} / 伤害 +${overview.bonuses.passiveBonuses.damage}`);
+	console.log('可修炼项目');
+	overview.options.forEach((option, index) => {
+		const target = option.targetMartialArtName ? ` [${option.targetMartialArtName}]` : '';
+		const status = option.available ? '可修炼' : '修为不足';
+		console.log(`${index + 1}. ${option.name}${target} - 当前 ${option.currentLevel} 层 / 消耗 ${option.nextCost} / ${status}`);
+		console.log(`   ${option.effectPreview}`);
+	});
+}
+
+function printSceneOverview(game: Game): void {
+	const scene = game.getCurrentScene();
+	printDivider();
+	console.log(`当前场景：${scene.title}`);
+	console.log(scene.description);
+	console.log(`场景威胁：${scene.threats.join('、')}`);
+	console.log(`累计修为：${game.getCultivation()}`);
+}
+
 function printHelp(): void {
 	printDivider();
 	console.log('操作说明');
@@ -178,6 +209,84 @@ function printHelp(): void {
 	console.log('9. 在主菜单中可以分别查看背包，并切换轻功、内功、各流派外功，以及 7 个装备槽位。');
 	console.log('10. 每回合按速度决定先后手，速度更高的一方先行动。');
 	console.log('11. 在战斗界面输入 q 可退出当前遭遇并返回主菜单。');
+	console.log('12. 游历当前场景会触发传闻、修炼或遭遇事件；非战斗事件会直接转化为修为。');
+	console.log('13. 修炼分为基础修炼和武学研习两类，都会永久影响后续角色面板与战斗数值。');
+}
+
+async function runTrainingMenu(rl: ReturnType<typeof createInterface>, game: Game): Promise<void> {
+	while (true) {
+		const overview = game.getHeroTrainingOverview();
+		printTrainingOverview(game);
+		console.log('q. 返回主菜单');
+
+		const answer = await rl.question('选择修炼项目：');
+		if (answer.trim().toLowerCase() === 'q') {
+			return;
+		}
+
+		const optionIndex = Number(answer.trim()) - 1;
+		if (!Number.isInteger(optionIndex) || optionIndex < 0 || optionIndex >= overview.options.length) {
+			console.log('无效编号。');
+			continue;
+		}
+
+		const option = overview.options[optionIndex];
+		if (!option.available) {
+			console.log(`修为不足，${option.name}需要${option.nextCost}点修为。`);
+			continue;
+		}
+
+		const result = game.trainHero(option.id);
+		console.log(result.summary);
+		console.log(`本次消耗 ${result.spentCultivation} 点修为，剩余 ${result.remainingCultivation}。`);
+	}
+}
+
+async function runTravel(rl: ReturnType<typeof createInterface>, game: Game): Promise<void> {
+	printSceneOverview(game);
+	const result = game.travel();
+	printDivider();
+	console.log(`游历结果：${result.summary}`);
+	result.log.forEach((entry) => {
+		console.log(entry);
+	});
+	console.log(`当前累计修为：${result.totalCultivation}`);
+
+	if (result.encounter) {
+		console.log('你已卷入一场遭遇战。');
+		await runEncounter(rl, game);
+		return;
+	}
+
+	await rl.question('按回车返回主菜单。');
+}
+
+async function runSceneSelection(rl: ReturnType<typeof createInterface>, game: Game): Promise<void> {
+	const scenes = game.getAvailableScenes();
+
+	while (true) {
+		const currentScene = game.getCurrentScene();
+		printDivider();
+		console.log(`当前游历场景：${currentScene.title}`);
+		scenes.forEach((scene, index) => {
+			console.log(`${index + 1}. ${scene.title} - ${scene.description}`);
+		});
+		console.log('q. 返回主菜单');
+
+		const answer = await rl.question('请选择场景：');
+		if (answer.trim().toLowerCase() === 'q') {
+			return;
+		}
+
+		const index = Number(answer.trim()) - 1;
+		if (!Number.isInteger(index) || index < 0 || index >= scenes.length) {
+			console.log('无效场景编号。');
+			continue;
+		}
+
+		const scene: SceneData = game.travelToScene(scenes[index].id);
+		console.log(`你已前往${scene.title}。`);
+	}
 }
 
 async function chooseTechnique(rl: ReturnType<typeof createInterface>, game: Game): Promise<Technique | undefined> {
@@ -508,31 +617,46 @@ async function main(): Promise<void> {
 			}
 
 			if (normalized === '2') {
-				printHeroPanel(game);
+				await runTravel(rl, game);
 				continue;
 			}
 
 			if (normalized === '3') {
-				printMartialArts(game);
+				await runSceneSelection(rl, game);
 				continue;
 			}
 
 			if (normalized === '4') {
-				printGearInventory(game);
+				printHeroPanel(game);
 				continue;
 			}
 
 			if (normalized === '5') {
-				await runEquipmentMenu(rl, game);
+				printMartialArts(game);
 				continue;
 			}
 
 			if (normalized === '6') {
+				printGearInventory(game);
+				continue;
+			}
+
+			if (normalized === '7') {
+				await runTrainingMenu(rl, game);
+				continue;
+			}
+
+			if (normalized === '8') {
+				await runEquipmentMenu(rl, game);
+				continue;
+			}
+
+			if (normalized === '9') {
 				printHelp();
 				continue;
 			}
 
-			if (normalized === '7' || normalized === 'q') {
+			if (normalized === '10' || normalized === 'q') {
 				console.log('江湖路远，后会有期。');
 				return;
 			}

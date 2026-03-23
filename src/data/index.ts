@@ -2,7 +2,9 @@ import charactersData from './characters.json';
 import configData from './game-config.json';
 import gearData from './gear.json';
 import martialArtsData from './martial-arts.json';
+import sceneEventsData from './scene-events.json';
 import scenesData from './scenes.json';
+import { applyTrainingToAttributes, applyTrainingToMartialArt } from '../training';
 
 import type {
     CharacterProfile,
@@ -14,10 +16,12 @@ import type {
     GameConfig,
     GameContent,
     GearItem,
+    HeroTrainingState,
     KnownGear,
     KnownGearIds,
     KnownMartialArts,
     MartialArt,
+    SceneEventData,
     SceneData,
     WaigongCategory,
 } from '../types';
@@ -28,6 +32,7 @@ export function loadGameContent(): GameContent {
         gear: gearData as GearItem[],
         characters: charactersData as CharacterTemplate[],
         scenes: scenesData as SceneData[],
+        sceneEvents: sceneEventsData as SceneEventData[],
         config: configData as GameConfig,
     };
 }
@@ -38,6 +43,7 @@ export function buildCharacterProfile(
     loadoutOverride?: EquippedMartialArtIds,
     gearOverride?: EquippedGearIds,
     knownGearOverride?: KnownGearIds,
+    trainingState?: HeroTrainingState,
 ): CharacterProfile {
     const template = content.characters.find((entry) => entry.id === characterId);
 
@@ -46,15 +52,18 @@ export function buildCharacterProfile(
     }
 
     const gear = resolveGear(content.gear, gearOverride ?? template.equippedGearIds);
-    const equipment = resolveEquipment(content.martialArts, loadoutOverride ?? template.equippedMartialArtIds, gear);
+    const equipment = resolveEquipment(content.martialArts, loadoutOverride ?? template.equippedMartialArtIds, gear, trainingState);
     const knownMartialArts = resolveKnownMartialArts(content.martialArts, template);
     const knownGear = resolveKnownGear(content.gear, knownGearOverride ?? template.knownGearIds);
+    const attributes = trainingState ? applyTrainingToAttributes(template.attributes, trainingState) : template.attributes;
+    const maxHealth = template.maxHealth + (trainingState?.bodyLevel ?? 0) * 6;
+    const maxQi = template.maxQi + (trainingState?.breathLevel ?? 0) * 4;
 
     return {
         name: template.name,
-        maxHealth: template.maxHealth,
-        maxQi: template.maxQi,
-        attributes: template.attributes,
+        maxHealth,
+        maxQi,
+        attributes,
         equipment,
         knownMartialArts,
         gear,
@@ -62,13 +71,15 @@ export function buildCharacterProfile(
     };
 }
 
-function resolveEquipment(martialArts: MartialArt[], equippedIds: EquippedMartialArtIds, gear: EquippedGear): EquippedMartialArts {
-    const waigongLoadout = resolveWaigongLoadout(martialArts, equippedIds.waigong);
+function resolveEquipment(martialArts: MartialArt[], equippedIds: EquippedMartialArtIds, gear: EquippedGear, trainingState?: HeroTrainingState): EquippedMartialArts {
+    const waigongLoadout = resolveWaigongLoadout(martialArts, equippedIds.waigong, trainingState);
     const activeWaigongCategory = gear.weapon?.weaponCategory ?? 'fist';
+    const qinggong = findMartialArt(martialArts, equippedIds.qinggong);
+    const neigong = findMartialArt(martialArts, equippedIds.neigong);
 
     return {
-        qinggong: findMartialArt(martialArts, equippedIds.qinggong),
-        neigong: findMartialArt(martialArts, equippedIds.neigong),
+        qinggong: trainingState ? applyTrainingToMartialArt(qinggong, trainingState) : qinggong,
+        neigong: trainingState ? applyTrainingToMartialArt(neigong, trainingState) : neigong,
         waigong: waigongLoadout[activeWaigongCategory],
         waigongLoadout,
         activeWaigongCategory,
@@ -101,13 +112,17 @@ function resolveGear(gear: GearItem[], equippedGearIds: EquippedGearIds): Equipp
     };
 }
 
-function resolveWaigongLoadout(martialArts: MartialArt[], equippedIds: EquippedMartialArtIds['waigong']): Record<WaigongCategory, MartialArt> {
+function resolveWaigongLoadout(
+    martialArts: MartialArt[],
+    equippedIds: EquippedMartialArtIds['waigong'],
+    trainingState?: HeroTrainingState,
+): Record<WaigongCategory, MartialArt> {
     return {
-        fist: findWaigong(martialArts, 'fist', equippedIds.fist),
-        blade: findWaigong(martialArts, 'blade', equippedIds.blade),
-        sword: findWaigong(martialArts, 'sword', equippedIds.sword),
-        staff: findWaigong(martialArts, 'staff', equippedIds.staff),
-        'hidden-weapon': findWaigong(martialArts, 'hidden-weapon', equippedIds['hidden-weapon']),
+        fist: findWaigong(martialArts, 'fist', equippedIds.fist, trainingState),
+        blade: findWaigong(martialArts, 'blade', equippedIds.blade, trainingState),
+        sword: findWaigong(martialArts, 'sword', equippedIds.sword, trainingState),
+        staff: findWaigong(martialArts, 'staff', equippedIds.staff, trainingState),
+        'hidden-weapon': findWaigong(martialArts, 'hidden-weapon', equippedIds['hidden-weapon'], trainingState),
     };
 }
 
@@ -143,7 +158,7 @@ function findGear(gear: GearItem[], gearId: string): GearItem {
     return item;
 }
 
-function findWaigong(martialArts: MartialArt[], category: WaigongCategory, martialArtId: string | null): MartialArt {
+function findWaigong(martialArts: MartialArt[], category: WaigongCategory, martialArtId: string | null, trainingState?: HeroTrainingState): MartialArt {
     if (martialArtId) {
         const martialArt = findMartialArt(martialArts, martialArtId);
 
@@ -151,10 +166,11 @@ function findWaigong(martialArts: MartialArt[], category: WaigongCategory, marti
             throw new Error(`Martial art ${martialArtId} does not match waigong category ${category}`);
         }
 
-        return martialArt;
+        return trainingState ? applyTrainingToMartialArt(martialArt, trainingState) : martialArt;
     }
 
-    return findBaseWaigong(martialArts, category);
+    const baseWaigong = findBaseWaigong(martialArts, category);
+    return trainingState ? applyTrainingToMartialArt(baseWaigong, trainingState) : baseWaigong;
 }
 
 function findBaseWaigong(martialArts: MartialArt[], category: WaigongCategory): MartialArt {

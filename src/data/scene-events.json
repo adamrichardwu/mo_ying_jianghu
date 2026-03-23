@@ -1,0 +1,54 @@
+[
+  {
+    "id": "ancient-road-rumor",
+    "sceneId": "ancient-road",
+    "title": "道旁传闻",
+    "description": "你在路边茶摊听见行商议论黑风盗近日常在暮色里试探过客。",
+    "type": "rumor",
+    "weight": 4,
+    "cultivationReward": 1
+  },
+  {
+    "id": "ancient-road-breathing",
+    "sceneId": "ancient-road",
+    "title": "松风调息",
+    "description": "古道边松涛起伏，你借山风吐纳行气，将一路奔波化为一段稳练功夫。",
+    "type": "training",
+    "weight": 3,
+    "cultivationReward": 2
+  },
+  {
+    "id": "ancient-road-ambush",
+    "sceneId": "ancient-road",
+    "title": "流寇伏击",
+    "description": "石坡后忽然窜出黑影，黑风盗趁你分神时拦住去路。",
+    "type": "encounter",
+    "weight": 3
+  },
+  {
+    "id": "teahouse-rumor",
+    "sceneId": "teahouse",
+    "title": "茶肆耳报",
+    "description": "你在临河茶肆听见江湖客交换线报，摸清了这一带的动静。",
+    "type": "rumor",
+    "weight": 4,
+    "cultivationReward": 1
+  },
+  {
+    "id": "teahouse-observe",
+    "sceneId": "teahouse",
+    "title": "隔桌观招",
+    "description": "两桌武人言语不和，当众拆了几式。你在旁静看，竟从收招转腕间悟到一些门道。",
+    "type": "training",
+    "weight": 4,
+    "cultivationReward": 2
+  },
+  {
+    "id": "teahouse-spy",
+    "sceneId": "teahouse",
+    "title": "暗探现身",
+    "description": "角落里的客人忽然掀杯而起，原来是受雇盯梢的黑风盗同伙。",
+    "type": "encounter",
+    "weight": 2
+  }
+]

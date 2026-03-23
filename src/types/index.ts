@@ -178,6 +178,50 @@ export interface KnownGear {
     ring: GearItem[];
 }
 
+export type TrainingOptionId = 'body' | 'breath' | 'movement' | 'strength' | 'qinggong' | 'neigong' | 'waigong';
+
+export interface HeroTrainingState {
+    bodyLevel: number;
+    breathLevel: number;
+    movementLevel: number;
+    strengthLevel: number;
+    martialArtMastery: Record<string, number>;
+}
+
+export interface TrainingBonuses {
+    maxHealth: number;
+    maxQi: number;
+    attributes: BaseAttributes;
+    passiveBonuses: PassiveBonuses;
+}
+
+export interface TrainingOption {
+    id: TrainingOptionId;
+    name: string;
+    description: string;
+    currentLevel: number;
+    nextCost: number;
+    effectPreview: string;
+    available: boolean;
+    targetMartialArtId?: string;
+    targetMartialArtName?: string;
+}
+
+export interface HeroTrainingOverview {
+    cultivation: number;
+    state: HeroTrainingState;
+    bonuses: TrainingBonuses;
+    options: TrainingOption[];
+}
+
+export interface TrainingResult {
+    option: TrainingOption;
+    spentCultivation: number;
+    remainingCultivation: number;
+    summary: string;
+    newLevel: number;
+}
+
 export interface CharacterProfile {
     name: string;
     maxHealth: number;
@@ -231,6 +275,18 @@ export interface SceneData {
     lootBias?: Record<GearRarity, number>;
 }
 
+export type SceneEventType = 'encounter' | 'rumor' | 'training';
+
+export interface SceneEventData {
+    id: string;
+    sceneId: string;
+    title: string;
+    description: string;
+    type: SceneEventType;
+    weight: number;
+    cultivationReward?: number;
+}
+
 export interface GameConfig {
     initialSceneId: string;
     heroId: string;
@@ -242,6 +298,7 @@ export interface GameContent {
     gear: GearItem[];
     characters: CharacterTemplate[];
     scenes: SceneData[];
+    sceneEvents: SceneEventData[];
     config: GameConfig;
 }
 
@@ -252,6 +309,18 @@ export interface GameState {
     heroLoadout: EquippedMartialArtIds;
     heroGearLoadout: EquippedGearIds;
     heroKnownGearIds: KnownGearIds;
+    cultivation: number;
+    heroTraining: HeroTrainingState;
+}
+
+export interface TravelResult {
+    scene: SceneData;
+    event: SceneEventData;
+    encounter?: EncounterState;
+    summary: string;
+    log: string[];
+    cultivationGained: number;
+    totalCultivation: number;
 }
 
 export interface EncounterState {
